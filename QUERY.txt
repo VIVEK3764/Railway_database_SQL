@@ -1,0 +1,47 @@
+DELIMITER $$
+CREATE PROCEDURE search_train_by_station(
+    IN SRC VARCHAR(10), 
+    IN DEST VARCHAR(10), 
+    IN travel_date DATE
+)
+BEGIN
+    SELECT DISTINCT t.train_number, t.train_name, r1.departure_time as arrival_time, r2.arrival_time as departure_time,r2.distance-r1.distance as distance
+    FROM route AS r1
+    JOIN route AS r2 ON r1.train_number = r2.train_number
+    JOIN train AS t ON t.train_number = r1.train_number
+    WHERE r1.station_code = SRC
+      AND r2.station_code = DEST
+      AND r1.islno < r2.islno
+      AND LOWER(t.runs_on_days) LIKE CONCAT('%', LOWER(DATE_FORMAT(travel_date, '%a')), '%');
+END $$
+DELIMITER ;
+
+
+
+
+DELIMITER $$
+CREATE PROCEDURE search_train_by_station1(
+    IN SRC VARCHAR(50), 
+    IN DEST VARCHAR(50), 
+    IN travel_date DATE
+)
+BEGIN
+    SELECT DISTINCT t.train_number, t.train_name, r1.arrival_time as arrival_time, r2.departure_time as departure_time,r2.distance-r1.distance as distance
+    FROM route AS r1
+    JOIN route AS r2 ON r1.train_number = r2.train_number
+    JOIN train AS t ON t.train_number = r1.train_number
+    WHERE r1.station_code =(SELECT station_code FROM station WHERE LOWER(station_name) LIKE '%SRC%')
+      AND r2.station_code =(SELECT station_code FROM station WHERE LOWER(station_name) LIKE '%DEST%')
+      AND r1.islno < r2.islno
+      AND LOWER(t.runs_on_days) LIKE CONCAT('%', LOWER(DATE_FORMAT(travel_date, '%a')), '%');
+END $$
+DELIMITER ;
+
+
+LOAD DATA LOCAL INFILE 'C:\\Users\\gkrmv\\Downloads\\route_data_cleaned (1).csv'
+INTO TABLE route
+FIELDS TERMINATED BY ','  
+ENCLOSED BY '"'  
+LINES TERMINATED BY '\n'  
+IGNORE 1 ROWS  
+(train_number, islno, station_code, arrival_time, departure_time, distance);
