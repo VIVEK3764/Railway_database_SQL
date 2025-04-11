@@ -4,115 +4,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Registration</title>
+    <title>Railway Train Search</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 600px;
+            max-width: 800px;
             margin: 0 auto;
             padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+
+        .nav-buttons {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .nav-buttons a {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 0 10px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .nav-buttons a:hover {
+            background-color: #45a049;
+        }
+
+        .search-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
 
         .form-group {
-            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
         }
 
         label {
-            display: block;
-            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
         }
 
         input,
         select {
-            width: 100%;
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
+            font-size: 16px;
         }
 
         button {
             background-color: #4CAF50;
             color: white;
-            padding: 10px 15px;
+            padding: 10px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
         }
 
         button:hover {
             background-color: #45a049;
         }
+
+        #results {
+            margin-top: 20px;
+        }
+
+        .train-card {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
     </style>
 </head>
 
 <body>
-    <h2>User Registration Form</h2>
-    <form id="userForm">
-        <div class="form-group">
-            <label for="user_name">Full Name:</label>
-            <input type="text" id="user_name" name="user_name" required>
+    <div class="container">
+        <div class="nav-buttons">
+            <a href="/">Search Trains</a>
+            <a href="/register.html">User Registration</a>
         </div>
-
-        <div class="form-group">
-            <label for="age">Age:</label>
-            <input type="number" id="age" name="age">
-        </div>
-
-        <div class="form-group">
-            <label for="gender">Gender:</label>
-            <select id="gender" name="gender" required>
-                <option value="">Select Gender</option>
-                <option value="M">Male</option>
-                <option value="F">Female</option>
-                <option value="O">Other</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="phone_number">Phone Number:</label>
-            <input type="tel" id="phone_number" name="phone_number" required>
-        </div>
-
-        <div class="form-group">
-            <label for="email_id">Email:</label>
-            <input type="email" id="email_id" name="email_id" required>
-        </div>
-
-        <button type="submit">Submit</button>
-    </form>
+        <h1>Train Search</h1>
+        <form id="searchForm" class="search-form">
+            <div class="form-group">
+                <label for="sourceStation">Source Station Code:</label>
+                <input type="text" id="sourceStation" name="sourceStation" required>
+            </div>
+            <div class="form-group">
+                <label for="destinationStation">Destination Station Code:</label>
+                <input type="text" id="destinationStation" name="destinationStation" required>
+            </div>
+            <div class="form-group">
+                <label for="travelDate">Date of Travel:</label>
+                <input type="date" id="travelDate" name="travelDate" required>
+            </div>
+            <button type="submit">Search Trains</button>
+        </form>
+        <div id="results"></div>
+    </div>
 
     <script>
-        document.getElementById('userForm').addEventListener('submit', async function (e) {
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const formData = {
-                user_name: document.getElementById('user_name').value,
-                age: document.getElementById('age').value,
-                gender: document.getElementById('gender').value,
-                phone_number: document.getElementById('phone_number').value,
-                email_id: document.getElementById('email_id').value
-            };
+            const sourceStation = document.getElementById('sourceStation').value;
+            const destinationStation = document.getElementById('destinationStation').value;
+            const travelDate = document.getElementById('travelDate').value;
 
             try {
-                const response = await fetch('http://localhost:3000/insert_user', {
+                const response = await fetch('/search-trains', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(formData)
+                    body: JSON.stringify({
+                        sourceStation,
+                        destinationStation,
+                        travelDate
+                    })
                 });
 
                 const data = await response.json();
 
-                if (data.success) {
-                    alert('User registered successfully!');
-                    document.getElementById('userForm').reset();
-                } else {
-                    alert('Error: ' + data.message);
+                const resultsDiv = document.getElementById('results');
+                resultsDiv.innerHTML = '';
+
+                if (data.error) {
+                    resultsDiv.innerHTML = `<div class="error">${data.error}</div>`;
+                    return;
                 }
+
+                if (data.length === 0) {
+                    resultsDiv.innerHTML = '<div>No trains found for the selected route and date.</div>';
+                    return;
+                }
+
+                data.forEach(train => {
+                    const trainCard = document.createElement('div');
+                    trainCard.className = 'train-card';
+                    trainCard.innerHTML = `
+                        <h3>${train.train_name} (${train.train_number})</h3>
+                        <p>Departure: ${train.departure_time} from ${train.source_station}</p>
+                        <p>Arrival: ${train.arrival_time} at ${train.destination_station}</p>
+                        <p>Duration: ${train.duration}</p>
+                        <p>Available Classes: ${train.available_classes}</p>
+                    `;
+                    resultsDiv.appendChild(trainCard);
+                });
             } catch (error) {
+                document.getElementById('results').innerHTML =
+                    `<div class="error">Error searching for trains. Please try again.</div>`;
                 console.error('Error:', error);
-                alert('An error occurred while submitting the form');
             }
         });
     </script>

@@ -34,6 +34,30 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Serve the registration page
+app.get('/register.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'register.html'));
+});
+
+// Search trains endpoint
+app.post('/search-trains', (req, res) => {
+    const { sourceStation, destinationStation, travelDate } = req.body;
+
+    // Call the stored procedure
+    const query = 'CALL search_train_by_station(?, ?, ?)';
+
+    db.query(query, [sourceStation, destinationStation, travelDate], (err, results) => {
+        if (err) {
+            console.error('Error executing stored procedure:', err);
+            return res.status(500).json({ error: 'Error searching for trains' });
+        }
+
+        // The stored procedure returns results in the first element of the results array
+        const trains = results[0];
+        res.json(trains);
+    });
+});
+
 // Handle form submission
 app.post('/insert_user', (req, res) => {
     const { user_name, age, gender, phone_number, email_id } = req.body;
