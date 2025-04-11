@@ -96,11 +96,52 @@
             border-radius: 4px;
             padding: 15px;
             margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .train-card h3 {
+            color: #333;
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .train-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .info-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #666;
+        }
+
+        .info-value {
+            color: #333;
         }
 
         .error {
             color: red;
             margin-top: 10px;
+            padding: 10px;
+            background-color: #ffebee;
+            border-radius: 4px;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            background-color: #f9f9f9;
+            border-radius: 4px;
         }
     </style>
 </head>
@@ -114,12 +155,12 @@
         <h1>Train Search</h1>
         <form id="searchForm" class="search-form">
             <div class="form-group">
-                <label for="sourceStation">Source Station Code:</label>
-                <input type="text" id="sourceStation" name="sourceStation" required>
+                <label for="sourceStation">Source Station Name:</label>
+                <input type="text" id="sourceStation" name="sourceStation" placeholder="e.g., Jaipur" required>
             </div>
             <div class="form-group">
-                <label for="destinationStation">Destination Station Code:</label>
-                <input type="text" id="destinationStation" name="destinationStation" required>
+                <label for="destinationStation">Destination Station Name:</label>
+                <input type="text" id="destinationStation" name="destinationStation" placeholder="e.g., Mavli" required>
             </div>
             <div class="form-group">
                 <label for="travelDate">Date of Travel:</label>
@@ -162,7 +203,7 @@
                 }
 
                 if (data.length === 0) {
-                    resultsDiv.innerHTML = '<div>No trains found for the selected route and date.</div>';
+                    resultsDiv.innerHTML = '<div class="no-results">No trains found for the selected route and date.</div>';
                     return;
                 }
 
@@ -171,10 +212,32 @@
                     trainCard.className = 'train-card';
                     trainCard.innerHTML = `
                         <h3>${train.train_name} (${train.train_number})</h3>
-                        <p>Departure: ${train.departure_time} from ${train.source_station}</p>
-                        <p>Arrival: ${train.arrival_time} at ${train.destination_station}</p>
-                        <p>Duration: ${train.duration}</p>
-                        <p>Available Classes: ${train.available_classes}</p>
+                        <div class="train-info">
+                            <div class="info-group">
+                                <span class="info-label">Source Station:</span>
+                                <span class="info-value">${train.source_name} (${train.source_code})</span>
+                            </div>
+                            <div class="info-group">
+                                <span class="info-label">Destination Station:</span>
+                                <span class="info-value">${train.destination_name} (${train.destination_code})</span>
+                            </div>
+                            <div class="info-group">
+                                <span class="info-label">Departure Time:</span>
+                                <span class="info-value">${train.departure_time}</span>
+                            </div>
+                            <div class="info-group">
+                                <span class="info-label">Arrival Time:</span>
+                                <span class="info-value">${train.arrival_time}</span>
+                            </div>
+                            <div class="info-group">
+                                <span class="info-label">Distance:</span>
+                                <span class="info-value">${train.distance} km</span>
+                            </div>
+                            <div class="info-group">
+                                <span class="info-label">Travel Date:</span>
+                                <span class="info-value">${new Date(train.actual_travel_date).toLocaleDateString()}</span>
+                            </div>
+                        </div>
                     `;
                     resultsDiv.appendChild(trainCard);
                 });

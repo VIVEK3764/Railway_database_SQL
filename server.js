@@ -44,7 +44,7 @@ app.post('/search-trains', (req, res) => {
     const { sourceStation, destinationStation, travelDate } = req.body;
 
     // Call the stored procedure
-    const query = 'CALL search_train_by_station(?, ?, ?)';
+    const query = 'CALL search_train_by_station2(?, ?, ?)';
 
     db.query(query, [sourceStation, destinationStation, travelDate], (err, results) => {
         if (err) {
