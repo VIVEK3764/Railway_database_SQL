@@ -4,14 +4,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Railway Train Search</title>
+    <title>Train Search</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
             background-color: #f5f5f5;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .nav-buttons a {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .nav-buttons a:hover {
+            background-color: #45a049;
         }
 
         .container {
@@ -21,232 +40,201 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-        h1 {
-            color: #333;
-            text-align: center;
-        }
-
-        .nav-buttons {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .nav-buttons a {
-            display: inline-block;
-            padding: 10px 20px;
-            margin: 0 10px;
-            background-color: #4CAF50;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            transition: background-color 0.3s;
-        }
-
-        .nav-buttons a:hover {
-            background-color: #45a049;
-        }
-
-        .search-form {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
         .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
+            margin-bottom: 15px;
         }
 
         label {
+            display: block;
+            margin-bottom: 5px;
             font-weight: bold;
-            color: #555;
+            color: #333;
         }
 
-        input,
-        select {
+        input {
+            width: 100%;
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
-            font-size: 16px;
+            box-sizing: border-box;
         }
 
         button {
             background-color: #4CAF50;
             color: white;
-            padding: 10px;
+            padding: 10px 20px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            width: 100%;
             font-size: 16px;
-            margin-top: 10px;
         }
 
         button:hover {
             background-color: #45a049;
         }
 
-        #results {
-            margin-top: 20px;
-        }
-
         .train-card {
             background-color: white;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 15px;
-            margin-bottom: 10px;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-        .train-card h3 {
+        .train-name {
+            font-size: 20px;
+            font-weight: bold;
             color: #333;
-            margin-top: 0;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
+            margin-bottom: 15px;
         }
 
-        .train-info {
+        .train-details {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 10px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
         }
 
-        .info-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
+        .detail-group {
+            margin-bottom: 10px;
         }
 
-        .info-label {
+        .detail-label {
             font-weight: bold;
             color: #666;
         }
 
-        .info-value {
-            color: #333;
-        }
-
-        .error {
-            color: red;
-            margin-top: 10px;
-            padding: 10px;
-            background-color: #ffebee;
+        .book-button {
+            background-color: #2196F3;
+            color: white;
+            padding: 10px 20px;
+            border: none;
             border-radius: 4px;
+            cursor: pointer;
+            margin-top: 15px;
+            width: auto;
+            display: inline-block;
         }
 
-        .no-results {
+        .book-button:hover {
+            background-color: #1976D2;
+        }
+
+        .error-message {
+            color: #f44336;
             text-align: center;
-            padding: 20px;
-            color: #666;
-            background-color: #f9f9f9;
-            border-radius: 4px;
+            margin-top: 20px;
         }
     </style>
 </head>
 
 <body>
+    <div class="nav-buttons">
+        <a href="/">Search Trains</a>
+        <a href="/register.html">User Registration</a>
+    </div>
+
     <div class="container">
-        <div class="nav-buttons">
-            <a href="/">Search Trains</a>
-            <a href="/register.html">User Registration</a>
-        </div>
-        <h1>Train Search</h1>
-        <form id="searchForm" class="search-form">
+        <form id="searchForm" onsubmit="searchTrains(event)">
             <div class="form-group">
-                <label for="sourceStation">Source Station Name:</label>
-                <input type="text" id="sourceStation" name="sourceStation" placeholder="e.g., Jaipur" required>
+                <label for="sourceStation">Source Station:</label>
+                <input type="text" id="sourceStation" required placeholder="Enter source station (e.g., JAIPUR)">
             </div>
+
             <div class="form-group">
-                <label for="destinationStation">Destination Station Name:</label>
-                <input type="text" id="destinationStation" name="destinationStation" placeholder="e.g., Mavli" required>
+                <label for="destinationStation">Destination Station:</label>
+                <input type="text" id="destinationStation" required
+                    placeholder="Enter destination station (e.g., MAVLI)">
             </div>
+
             <div class="form-group">
                 <label for="travelDate">Date of Travel:</label>
-                <input type="date" id="travelDate" name="travelDate" required>
+                <input type="date" id="travelDate" required>
             </div>
+
             <button type="submit">Search Trains</button>
         </form>
+
         <div id="results"></div>
     </div>
 
     <script>
-        document.getElementById('searchForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        function searchTrains(event) {
+            event.preventDefault();
 
             const sourceStation = document.getElementById('sourceStation').value;
             const destinationStation = document.getElementById('destinationStation').value;
             const travelDate = document.getElementById('travelDate').value;
 
-            try {
-                const response = await fetch('/search-trains', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        sourceStation,
-                        destinationStation,
-                        travelDate
-                    })
-                });
+            fetch('/search-trains', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    sourceStation,
+                    destinationStation,
+                    travelDate
+                }),
+            })
+                .then(response => response.json())
+                .then(trains => {
+                    const resultsDiv = document.getElementById('results');
+                    if (trains.length === 0) {
+                        resultsDiv.innerHTML = '<p class="error-message">No trains found for the selected route and date.</p>';
+                        return;
+                    }
 
-                const data = await response.json();
+                    resultsDiv.innerHTML = trains.map(train => {
+                        // Format the date for display
+                        const formattedDate = new Date(train.actual_travel_date).toLocaleDateString('en-GB', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                        });
 
-                const resultsDiv = document.getElementById('results');
-                resultsDiv.innerHTML = '';
-
-                if (data.error) {
-                    resultsDiv.innerHTML = `<div class="error">${data.error}</div>`;
-                    return;
-                }
-
-                if (data.length === 0) {
-                    resultsDiv.innerHTML = '<div class="no-results">No trains found for the selected route and date.</div>';
-                    return;
-                }
-
-                data.forEach(train => {
-                    const trainCard = document.createElement('div');
-                    trainCard.className = 'train-card';
-                    trainCard.innerHTML = `
-                        <h3>${train.train_name} (${train.train_number})</h3>
-                        <div class="train-info">
-                            <div class="info-group">
-                                <span class="info-label">Source Station:</span>
-                                <span class="info-value">${train.source_name} (${train.source_code})</span>
+                        return `
+                        <div class="train-card">
+                            <div class="train-name">${train.train_name} (${train.train_number})</div>
+                            <div class="train-details">
+                                <div>
+                                    <div class="detail-group">
+                                        <div class="detail-label">Source Station:</div>
+                                        <div>${train.source_name} (${train.source_code})</div>
+                                    </div>
+                                    <div class="detail-group">
+                                        <div class="detail-label">Departure Time:</div>
+                                        <div>${train.departure_time}</div>
+                                    </div>
+                                    <div class="detail-group">
+                                        <div class="detail-label">Distance:</div>
+                                        <div>${train.distance} km</div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="detail-group">
+                                        <div class="detail-label">Destination Station:</div>
+                                        <div>${train.destination_name} (${train.destination_code})</div>
+                                    </div>
+                                    <div class="detail-group">
+                                        <div class="detail-label">Arrival Time:</div>
+                                        <div>${train.arrival_time}</div>
+                                    </div>
+                                    <div class="detail-group">
+                                        <div class="detail-label">Travel Date:</div>
+                                        <div>${formattedDate}</div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="info-group">
-                                <span class="info-label">Destination Station:</span>
-                                <span class="info-value">${train.destination_name} (${train.destination_code})</span>
-                            </div>
-                            <div class="info-group">
-                                <span class="info-label">Departure Time:</span>
-                                <span class="info-value">${train.departure_time}</span>
-                            </div>
-                            <div class="info-group">
-                                <span class="info-label">Arrival Time:</span>
-                                <span class="info-value">${train.arrival_time}</span>
-                            </div>
-                            <div class="info-group">
-                                <span class="info-label">Distance:</span>
-                                <span class="info-value">${train.distance} km</span>
-                            </div>
-                            <div class="info-group">
-                                <span class="info-label">Travel Date:</span>
-                                <span class="info-value">${new Date(train.actual_travel_date).toLocaleDateString()}</span>
-                            </div>
+                            <a href="/booking.html?train_number=${encodeURIComponent(train.train_number)}&train_name=${encodeURIComponent(train.train_name)}&source_code=${encodeURIComponent(train.source_code)}&source_name=${encodeURIComponent(train.source_name)}&destination_code=${encodeURIComponent(train.destination_code)}&destination_name=${encodeURIComponent(train.destination_name)}&display_date=${encodeURIComponent(formattedDate)}" class="book-button">Book Now</a>
                         </div>
-                    `;
-                    resultsDiv.appendChild(trainCard);
+                    `}).join('');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('results').innerHTML = '<p class="error-message">Error searching for trains. Please try again.</p>';
                 });
-            } catch (error) {
-                document.getElementById('results').innerHTML =
-                    `<div class="error">Error searching for trains. Please try again.</div>`;
-                console.error('Error:', error);
-            }
-        });
+        }
     </script>
 </body>
 
