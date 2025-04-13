@@ -285,7 +285,7 @@ DELIMITER ;
 
 
 
-LOAD DATA LOCAL INFILE '"C:\Users\gkrmv\Downloads\schedules_proccesed.csv"'
+LOAD DATA LOCAL INFILE 'C:\Users\gkrmv\Downloads\schedules_proccesed.csv'
 INTO TABLE train_shedule
 FIELDS TERMINATED BY ','
 OPTIONALLY ENCLOSED BY '"'

@@ -77,145 +77,135 @@ app.post('/insert_user', (req, res) => {
 
 // Book ticket endpoint
 app.post('/book-ticket', (req, res) => {
-    const {
-        train_number,
-        train_name,
-        source_station,
-        source_name,
-        destination_station,
-        destination_name,
-        travel_date,
-        class: travel_class,
-        passenger_name,
-        age,
-        gender
-    } = req.body;
+    const { train_number, source_station, destination_station, travel_date, ticket_class, passengers } = req.body;
 
-    // Generate PNR number (current timestamp + random number)
-    const pnr_number = 'PNR' + Date.now() + Math.floor(Math.random() * 1000);
+    // Generate PNR number
+    const pnr_number = 'PNR' + Math.random().toString(36).substr(2, 8).toUpperCase();
 
     // Format dates properly for MySQL
     const formatDateForMySQL = (dateStr) => {
-        // If the date is already in YYYY-MM-DD format, return it as is
-        if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
-            return dateStr.split('T')[0];
-        }
-        // Otherwise, create a new Date object and format it
-        const date = new Date(dateStr);
-        return date.toISOString().split('T')[0];
-    };
+        try {
+            // If dateStr is not a string, convert it to string
+            if (typeof dateStr !== 'string') {
+                dateStr = String(dateStr);
+            }
 
-    // Format train number - just use the number without extra quotes
-    const formatted_train_number = train_number;
+            // If it's already in YYYY-MM-DD format, return as is
+            if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+                return dateStr;
+            }
+
+            // If it's in DD/MM/YYYY format, convert to YYYY-MM-DD
+            if (dateStr.includes('/')) {
+                const [day, month, year] = dateStr.split('/');
+                return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+            }
+
+            // If it's a Date object
+            if (dateStr instanceof Date) {
+                return dateStr.toISOString().split('T')[0];
+            }
+
+            // Try to parse as date
+            const date = new Date(dateStr);
+            if (!isNaN(date.getTime())) {
+                return date.toISOString().split('T')[0];
+            }
+
+            throw new Error('Invalid date format');
+        } catch (error) {
+            console.error('Date formatting error:', error);
+            return new Date().toISOString().split('T')[0]; // Return current date as fallback
+        }
+    };
 
     // Hardcoded values for now
     const user_id = 1; // Assuming user ID 1 exists
-    const date_of_book = formatDateForMySQL(new Date()); // Current date
+    const date_of_book = formatDateForMySQL(new Date());
     const travel_date_formatted = formatDateForMySQL(travel_date);
-    const transaction_id = 'TXN' + Date.now(); // Generate unique transaction ID
+    const transaction_id = 'TXN' + Date.now();
     const ticket_type = 'online';
     const payment_mode = 'UPI';
     const status = 'CONFIRMED';
 
-    // Calculate fare based on class (simplified calculation)
-    let total_fare = 0;
-    switch (travel_class) {
-        case '1A':
-            total_fare = 2000;
-            break;
-        case '2A':
-            total_fare = 1500;
-            break;
-        case '3A':
-            total_fare = 1000;
-            break;
-        case 'SL':
-            total_fare = 500;
-            break;
-        case 'CC':
-            total_fare = 300;
-            break;
-        default:
-            total_fare = 200;
-    }
-
-    // Map class codes to ticket_class enum values
-    const classMapping = {
-        '1A': 'first_ac',
-        '2A': 'second_ac',
-        '3A': 'third_ac',
-        'SL': 'sleeper',
-        'CC': 'general'
+    // Calculate fare based on class
+    const classFares = {
+        'sleeper': 500,
+        'third_ac': 1000,
+        'second_ac': 1500,
+        'first_ac': 2000,
+        'general': 300
     };
 
-    const ticket_class = classMapping[travel_class];
+    const baseFare = classFares[ticket_class] || 500;
+    const total_fare = passengers.length * baseFare;
 
-    // Insert ticket record
-    const insertTicketQuery = `
+    // First, create the ticket
+    const createTicketQuery = `
         INSERT INTO ticket (
-            pnr_number,
-            train_number,
-            user_id,
-            date_of_book,
-            boarding_station,
-            destination_station,
-            date_of_travel,
-            ticket_class,
-            total_fare,
-            transaction_id,
-            ticket_type,
-            payment_mode,
-            status
+            pnr_number, train_number, user_id, date_of_book, boarding_station,
+            destination_station, date_of_travel, no_of_passenger, ticket_class,
+            total_fare, transaction_id, ticket_type, payment_mode, status
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-    db.query(insertTicketQuery, [
-        pnr_number,
-        formatted_train_number,
-        user_id,
-        date_of_book,
-        source_station,
-        destination_station,
-        travel_date_formatted,
-        ticket_class,
-        total_fare,
-        transaction_id,
-        ticket_type,
-        payment_mode,
-        status
+    db.query(createTicketQuery, [
+        pnr_number, train_number, user_id, date_of_book, source_station,
+        destination_station, travel_date_formatted, passengers.length, ticket_class,
+        total_fare, transaction_id, ticket_type, payment_mode, status
     ], (err, result) => {
         if (err) {
             console.error('Error creating ticket:', err);
-
-            // Check for seat availability error
-            if (err.sqlState === '45000') {
-                return res.status(400).json({
-                    success: false,
-                    message: err.sqlMessage
-                });
-            }
-
-            return res.status(500).json({
-                success: false,
-                message: 'Error creating ticket'
-            });
+            return res.status(500).json({ error: 'Failed to create ticket' });
         }
 
-        res.json({
-            success: true,
-            message: 'Ticket booked successfully',
-            ticket_details: {
-                pnr_number,
-                train_number: formatted_train_number,
-                train_name,
-                source_station: source_name,
-                destination_station: destination_name,
-                travel_date: travel_date_formatted,
-                ticket_class,
-                total_fare,
-                status
-            }
+        const ticket_id = result.insertId;
+
+        // Insert passenger details
+        const insertPassengerQuery = `
+            INSERT INTO passenger (pnr_number, age, gender, seat_number, coach)
+            VALUES (?, ?, ?, ?, ?)
+        `;
+
+        // Calculate seat and coach numbers
+        const totalSeats = 73; // Total seats per coach
+        let currentSeat = 1;
+
+        // Insert each passenger
+        const passengerPromises = passengers.map(passenger => {
+            const seatNumber = currentSeat % totalSeats || totalSeats;
+            const coachNumber = Math.ceil(currentSeat / totalSeats);
+            currentSeat++;
+
+            return new Promise((resolve, reject) => {
+                db.query(insertPassengerQuery,
+                    [pnr_number, passenger.age, passenger.gender, seatNumber.toString(), coachNumber.toString()],
+                    (err, result) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(result);
+                        }
+                    }
+                );
+            });
         });
+
+        // Wait for all passenger insertions to complete
+        Promise.all(passengerPromises)
+            .then(() => {
+                res.json({
+                    success: true,
+                    ticket_id,
+                    pnr_number,
+                    total_fare,
+                    message: 'Ticket and passenger details created successfully'
+                });
+            })
+            .catch(err => {
+                console.error('Error inserting passenger details:', err);
+                res.status(500).json({ error: 'Failed to create passenger details' });
+            });
     });
 });
 

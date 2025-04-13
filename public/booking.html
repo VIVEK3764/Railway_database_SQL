@@ -146,6 +146,91 @@
             display: inline-block;
             width: 120px;
         }
+
+        .passenger-form {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .passenger-form h3 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        #add-passenger {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        #add-passenger:hover {
+            background: #218838;
+        }
+
+        .passenger-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .remove-passenger {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .remove-passenger:hover {
+            background: #c82333;
+        }
+
+        .remove-passenger:active {
+            background: #bd2130;
+        }
+
+        .fare-details {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .fare-details h3 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .fare-details p {
+            margin: 10px 0;
+            font-size: 16px;
+        }
+
+        .remove-passenger {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .remove-passenger:hover {
+            background: #c82333;
+        }
+
+        .remove-passenger:active {
+            background: #bd2130;
+        }
     </style>
 </head>
 
@@ -156,61 +241,60 @@
     </div>
 
     <div class="container">
-        <div class="train-details">
-            <div class="train-name" id="trainName"></div>
-            <div class="journey-details">
-                <div class="detail-group">
-                    <div class="detail-label">From:</div>
-                    <div id="sourceStation"></div>
-                </div>
-                <div class="detail-group">
-                    <div class="detail-label">To:</div>
-                    <div id="destinationStation"></div>
-                </div>
-                <div class="detail-group">
-                    <div class="detail-label">Date:</div>
-                    <div id="travelDate"></div>
-                </div>
+        <h1>Book Your Ticket</h1>
+        <div class="ticket-details">
+            <h2>Train Details</h2>
+            <p><strong>Train Number:</strong> <span id="train-number"></span></p>
+            <p><strong>Train Name:</strong> <span id="train-name"></span></p>
+            <p><strong>From:</strong> <span id="source-station"></span></p>
+            <p><strong>To:</strong> <span id="destination-station"></span></p>
+            <p><strong>Date:</strong> <span id="travel-date"></span></p>
+            <div class="form-group">
+                <label for="travel-class">Select Class:</label>
+                <select id="travel-class" required>
+                    <option value="sleeper">Sleeper (SL)</option>
+                    <option value="third_ac">Third AC (3A)</option>
+                    <option value="second_ac">Second AC (2A)</option>
+                    <option value="first_ac">First AC (1A)</option>
+                    <option value="general">General (GN)</option>
+                </select>
             </div>
         </div>
 
-        <form id="bookingForm" onsubmit="submitBooking(event)">
-            <div class="form-group">
-                <label for="class">Select Class:</label>
-                <select id="class" required>
-                    <option value="">Select a class</option>
-                    <option value="1A">First AC (1A)</option>
-                    <option value="2A">Second AC (2A)</option>
-                    <option value="3A">Third AC (3A)</option>
-                    <option value="SL">Sleeper (SL)</option>
-                    <option value="CC">Chair Car (CC)</option>
-                </select>
+        <form id="booking-form">
+            <div id="passengers-container">
+                <div class="passenger-form">
+                    <div class="passenger-header">
+                        <h3>Passenger 1</h3>
+                        <button type="button" class="remove-passenger" style="display: none;">Remove</button>
+                    </div>
+                    <div class="form-group">
+                        <label for="passenger-name-1">Full Name:</label>
+                        <input type="text" id="passenger-name-1" name="passenger-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="age-1">Age:</label>
+                        <input type="number" id="age-1" name="age" min="1" max="120" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="gender-1">Gender:</label>
+                        <select id="gender-1" name="gender" required>
+                            <option value="M">Male</option>
+                            <option value="F">Female</option>
+                            <option value="O">Other</option>
+                        </select>
+                    </div>
+                </div>
             </div>
-
-            <div class="form-group">
-                <label for="passengerName">Passenger Name:</label>
-                <input type="text" id="passengerName" required>
+            <button type="button" id="add-passenger">Add Another Passenger</button>
+            <div class="fare-details">
+                <h3>Fare Details</h3>
+                <p>Base Fare per Passenger: <span id="base-fare">₹500</span></p>
+                <p>Number of Passengers: <span id="passenger-count">1</span></p>
+                <p>Total Fare: <span id="total-fare">₹500</span></p>
             </div>
-
-            <div class="form-group">
-                <label for="age">Age:</label>
-                <input type="number" id="age" required min="1" max="120">
-            </div>
-
-            <div class="form-group">
-                <label for="gender">Gender:</label>
-                <select id="gender" required>
-                    <option value="">Select gender</option>
-                    <option value="M">Male</option>
-                    <option value="F">Female</option>
-                    <option value="O">Other</option>
-                </select>
-            </div>
-
-            <button type="submit">Book Ticket</button>
+            <button type="submit">Confirm Booking</button>
         </form>
-
-        <div id="message"></div>
     </div>
 
     <script>
@@ -226,85 +310,249 @@
 
         // Format the date for display only
         const formatDateForDisplay = (dateStr) => {
-            const date = new Date(dateStr);
-            return date.toLocaleDateString('en-GB', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric'
-            });
+            try {
+                if (!dateStr) return '';
+
+                // If dateStr is not a string, convert it to string
+                if (typeof dateStr !== 'string') {
+                    dateStr = String(dateStr);
+                }
+
+                // If it's already in DD/MM/YYYY format, return as is
+                if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
+                    return dateStr;
+                }
+
+                // If it's in YYYY-MM-DD format, convert to DD/MM/YYYY
+                if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+                    const [year, month, day] = dateStr.split('-');
+                    return `${day}/${month}/${year}`;
+                }
+
+                // If it's a Date object
+                if (dateStr instanceof Date) {
+                    return dateStr.toLocaleDateString('en-GB');
+                }
+
+                // Try to parse as date
+                const date = new Date(dateStr);
+                if (!isNaN(date.getTime())) {
+                    return date.toLocaleDateString('en-GB');
+                }
+
+                throw new Error('Invalid date format');
+            } catch (error) {
+                console.error('Date formatting error:', error);
+                return '';
+            }
         };
 
         // Format date for MySQL (YYYY-MM-DD)
         const formatDateForMySQL = (dateStr) => {
-            const [day, month, year] = dateStr.split('/');
-            return `${year}-${month}-${day}`;
+            try {
+                if (!dateStr) return '';
+
+                // If dateStr is not a string, convert it to string
+                if (typeof dateStr !== 'string') {
+                    dateStr = String(dateStr);
+                }
+
+                // If it's already in YYYY-MM-DD format, return as is
+                if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+                    return dateStr;
+                }
+
+                // If it's in DD/MM/YYYY format, convert to YYYY-MM-DD
+                if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
+                    const [day, month, year] = dateStr.split('/');
+                    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                }
+
+                // If it's a Date object
+                if (dateStr instanceof Date) {
+                    return dateStr.toISOString().split('T')[0];
+                }
+
+                // Try to parse as date
+                const date = new Date(dateStr);
+                if (!isNaN(date.getTime())) {
+                    return date.toISOString().split('T')[0];
+                }
+
+                throw new Error('Invalid date format');
+            } catch (error) {
+                console.error('Date formatting error:', error);
+                return new Date().toISOString().split('T')[0]; // Return current date as fallback
+            }
         };
 
         // Populate train details
-        document.getElementById('trainName').textContent = `${trainName} (${trainNumber})`;
-        document.getElementById('sourceStation').textContent = `${sourceName} (${sourceCode})`;
-        document.getElementById('destinationStation').textContent = `${destinationName} (${destinationCode})`;
-        document.getElementById('travelDate').textContent = displayDate;
+        document.getElementById('train-number').textContent = trainNumber;
+        document.getElementById('train-name').textContent = trainName;
+        document.getElementById('source-station').textContent = `${sourceName} (${sourceCode})`;
+        document.getElementById('destination-station').textContent = `${destinationName} (${destinationCode})`;
+        document.getElementById('travel-date').textContent = formatDateForDisplay(displayDate);
+        document.getElementById('travel-class').value = urlParams.get('class') || 'sleeper';
 
-        function submitBooking(event) {
-            event.preventDefault();
+        // Add passenger form
+        let passengerCount = 1;
 
-            // Convert displayed date to MySQL format
-            const mysqlDate = formatDateForMySQL(displayDate);
+        // Function to update passenger numbers
+        function updatePassengerNumbers() {
+            const passengerForms = document.querySelectorAll('.passenger-form');
+            passengerForms.forEach((form, index) => {
+                const number = index + 1;
+                form.querySelector('h3').textContent = `Passenger ${number}`;
+
+                // Update input IDs and labels
+                ['name', 'age', 'gender'].forEach(field => {
+                    const input = form.querySelector(`[id^=passenger-${field}], [id^=${field}]`);
+                    const label = form.querySelector(`label[for^=passenger-${field}], label[for^=${field}]`);
+                    if (input) {
+                        const newId = field === 'name' ? `passenger-${field}-${number}` : `${field}-${number}`;
+                        input.id = newId;
+                        if (label) label.setAttribute('for', newId);
+                    }
+                });
+            });
+
+            // Update the global passenger count
+            passengerCount = passengerForms.length;
+
+            // Update passenger count in fare details
+            document.getElementById('passenger-count').textContent = passengerCount;
+
+            // Show/hide remove buttons based on passenger count
+            const removeButtons = document.querySelectorAll('.remove-passenger');
+            removeButtons.forEach((button, index) => {
+                button.style.display = passengerCount === 2 && index === 0 ? 'none' : 'block';
+            });
+        }
+
+        document.getElementById('add-passenger').addEventListener('click', () => {
+            passengerCount++;
+            const container = document.getElementById('passengers-container');
+            const newPassenger = document.createElement('div');
+            newPassenger.className = 'passenger-form';
+            newPassenger.innerHTML = `
+                <div class="passenger-header">
+                    <h3>Passenger ${passengerCount}</h3>
+                    <button type="button" class="remove-passenger">Remove</button>
+                </div>
+                <div class="form-group">
+                    <label for="passenger-name-${passengerCount}">Full Name:</label>
+                    <input type="text" id="passenger-name-${passengerCount}" name="passenger-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="age-${passengerCount}">Age:</label>
+                    <input type="number" id="age-${passengerCount}" name="age" min="1" max="120" required>
+                </div>
+                <div class="form-group">
+                    <label for="gender-${passengerCount}">Gender:</label>
+                    <select id="gender-${passengerCount}" name="gender" required>
+                        <option value="M">Male</option>
+                        <option value="F">Female</option>
+                        <option value="O">Other</option>
+                    </select>
+                </div>
+            `;
+            container.appendChild(newPassenger);
+
+            // Add event listener to the new remove button
+            newPassenger.querySelector('.remove-passenger').addEventListener('click', function () {
+                if (confirm('Are you sure you want to remove this passenger?')) {
+                    newPassenger.remove();
+                    updatePassengerNumbers();
+                    updateFare();
+                }
+            });
+
+            // Update passenger numbers and fare after adding
+            updatePassengerNumbers();
+            updateFare();
+        });
+
+        // Update fare calculation when class or number of passengers changes
+        function updateFare() {
+            const classFares = {
+                'sleeper': 500,
+                'third_ac': 1000,
+                'second_ac': 1500,
+                'first_ac': 2000,
+                'general': 300
+            };
+
+            const selectedClass = document.getElementById('travel-class').value;
+            const baseFare = classFares[selectedClass];
+            const passengerCount = document.querySelectorAll('.passenger-form').length;
+
+            document.getElementById('base-fare').textContent = `₹${baseFare}`;
+            document.getElementById('passenger-count').textContent = passengerCount;
+            document.getElementById('total-fare').textContent = `₹${baseFare * passengerCount}`;
+        }
+
+        // Add event listeners for fare updates
+        document.getElementById('travel-class').addEventListener('change', updateFare);
+
+        // Handle form submission
+        document.getElementById('booking-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Collect all passenger details
+            const passengers = [];
+            for (let i = 1; i <= passengerCount; i++) {
+                const nameField = document.getElementById(`passenger-name-${i}`);
+                const ageField = document.getElementById(`age-${i}`);
+                const genderField = document.getElementById(`gender-${i}`);
+
+                if (nameField && ageField && genderField) {
+                    passengers.push({
+                        name: nameField.value,
+                        age: parseInt(ageField.value),
+                        gender: genderField.value
+                    });
+                }
+            }
 
             const bookingData = {
                 train_number: trainNumber,
-                train_name: trainName,
                 source_station: sourceCode,
-                source_name: sourceName,
                 destination_station: destinationCode,
-                destination_name: destinationName,
-                travel_date: mysqlDate,
-                class: document.getElementById('class').value,
-                passenger_name: document.getElementById('passengerName').value,
-                age: document.getElementById('age').value,
-                gender: document.getElementById('gender').value
+                travel_date: formatDateForMySQL(displayDate),
+                ticket_class: document.getElementById('travel-class').value,
+                passengers: passengers,
+                no_of_passenger: passengers.length,
+                total_fare: parseInt(document.getElementById('total-fare').textContent.replace('₹', '')),
+                ticket_type: 'online',
+                payment_mode: 'online',
+                status: 'confirmed'
             };
 
-            fetch('/book-ticket', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(bookingData),
-            })
-                .then(response => response.json())
-                .then(data => {
-                    const messageDiv = document.getElementById('message');
-                    if (data.success) {
-                        const ticketDetails = data.ticket_details;
-                        messageDiv.className = 'success-message';
-                        messageDiv.innerHTML = `
-                        <h3>Ticket Booked Successfully!</h3>
-                        <div class="ticket-details">
-                            <p><strong>PNR Number:</strong> ${ticketDetails.pnr_number}</p>
-                            <p><strong>Train:</strong> ${ticketDetails.train_name} (${ticketDetails.train_number})</p>
-                            <p><strong>From:</strong> ${ticketDetails.source_station}</p>
-                            <p><strong>To:</strong> ${ticketDetails.destination_station}</p>
-                            <p><strong>Travel Date:</strong> ${displayDate}</p>
-                            <p><strong>Class:</strong> ${ticketDetails.ticket_class}</p>
-                            <p><strong>Total Fare:</strong> ₹${ticketDetails.total_fare}</p>
-                            <p><strong>Status:</strong> ${ticketDetails.status}</p>
-                        </div>
-                    `;
-                        document.getElementById('bookingForm').reset();
-                    } else {
-                        messageDiv.className = 'error-message';
-                        messageDiv.textContent = data.message || 'Error booking ticket. Please try again.';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    const messageDiv = document.getElementById('message');
-                    messageDiv.className = 'error-message';
-                    messageDiv.textContent = 'Error booking ticket. Please try again.';
+            try {
+                const response = await fetch('/book-ticket', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(bookingData)
                 });
-        }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('Ticket booked successfully! PNR: ' + data.pnr_number);
+                    window.location.href = '/'; // Redirect to home page
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to book ticket'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while booking the ticket');
+            }
+        });
+
+        // Initialize fare calculation
+        updateFare();
     </script>
 </body>
 
