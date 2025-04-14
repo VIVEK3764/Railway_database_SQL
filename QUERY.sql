@@ -217,7 +217,7 @@ CREATE PROCEDURE update_train_inventory()
 BEGIN
     DECLARE new_date DATE;
     -- Define new_date as tomorrow
-    SET new_date = CURDATE() + INTERVAL 1 DAY;
+    SET new_date = CURDATE() + INTERVAL 30 DAY;
     
     -- Insert a new inventory record for new_date for all trains that run on that day
     INSERT IGNORE INTO train_inventory (
@@ -236,7 +236,7 @@ BEGIN
     
     -- Delete any inventory records older than 30 days from today
     DELETE FROM train_inventory
-    WHERE travel_date < CURDATE() - INTERVAL 30 DAY;
+    WHERE travel_date < CURDATE();
 END $$
 
 DELIMITER ;
@@ -291,3 +291,160 @@ FIELDS TERMINATED BY ','
 OPTIONALLY ENCLOSED BY '"'
 LINES TERMINATED BY '\n'
 IGNORE 1 LINES;
+
+
+--fi=or updating seat count while booking
+DELIMITER $$
+
+CREATE PROCEDURE update_seat(
+    IN in_train_number VARCHAR(10),
+    IN in_date DATE,
+    IN in_passenger_count INT,
+    IN in_class VARCHAR(20)
+)
+BEGIN
+    DECLARE current_seats INT DEFAULT 0;
+    
+    IF in_class = 'first_ac' THEN
+        SELECT first_ac_available INTO current_seats 
+        FROM train_inventory 
+        WHERE train_number = in_train_number AND travel_date = in_date
+        FOR UPDATE;
+        
+        IF current_seats < in_passenger_count THEN
+            SIGNAL SQLSTATE '45000' 
+                SET MESSAGE_TEXT = 'Not enough seats available in first_ac.';
+        ELSE
+            UPDATE train_inventory
+            SET first_ac_available = first_ac_available - in_passenger_count
+            WHERE train_number = in_train_number AND travel_date = in_date;
+        END IF;
+        
+    ELSEIF in_class = 'second_ac' THEN
+        SELECT second_ac_available INTO current_seats 
+        FROM train_inventory 
+        WHERE train_number = in_train_number AND travel_date = in_date
+        FOR UPDATE;
+        
+        IF current_seats < in_passenger_count THEN
+            SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'Not enough seats available in second_ac.';
+        ELSE
+            UPDATE train_inventory
+            SET second_ac_available = second_ac_available - in_passenger_count
+            WHERE train_number = in_train_number AND travel_date = in_date;
+        END IF;
+        
+    ELSEIF in_class = 'third_ac' THEN
+        SELECT third_ac_available INTO current_seats 
+        FROM train_inventory 
+        WHERE train_number = in_train_number AND travel_date = in_date
+        FOR UPDATE;
+        
+        IF current_seats < in_passenger_count THEN
+            SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'Not enough seats available in third_ac.';
+        ELSE
+            UPDATE train_inventory
+            SET third_ac_available = third_ac_available - in_passenger_count
+            WHERE train_number = in_train_number AND travel_date = in_date;
+        END IF;
+        
+    ELSEIF in_class = 'sleeper' THEN
+        SELECT sleeper_available INTO current_seats 
+        FROM train_inventory 
+        WHERE train_number = in_train_number AND travel_date = in_date
+        FOR UPDATE;
+        
+        IF current_seats < in_passenger_count THEN
+            SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'Not enough seats available in sleeper.';
+        ELSE
+            UPDATE train_inventory
+            SET sleeper_available = sleeper_available - in_passenger_count
+            WHERE train_number = in_train_number AND travel_date = in_date;
+        END IF;
+        
+    ELSEIF in_class = 'general' THEN
+        SELECT general_available INTO current_seats 
+        FROM train_inventory 
+        WHERE train_number = in_train_number AND travel_date = in_date
+        FOR UPDATE;
+        
+        IF current_seats < in_passenger_count THEN
+            SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'Not enough seats available in general.';
+        ELSE
+            UPDATE train_inventory
+            SET general_available = general_available - in_passenger_count
+            WHERE train_number = in_train_number AND travel_date = in_date;
+        END IF;
+        
+    ELSE
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Invalid ticket class specified.';
+    END IF;
+    
+END $$
+
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE check_pnr_status(IN in_pnr_number VARCHAR(20))
+BEGIN
+    SELECT train_number,date_of_travel,boarding_station,destination_station,ticket_class,no_of_passenger,status FROM ticket WHERE pnr_number = in_pnr_number;
+END $$
+
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE train_shedule_lookup(IN in_train_number VARCHAR(10))
+BEGIN
+    SELECT train_number,train_name,runs_on_days FROM train WHERE train_number = in_train_number;
+    SELECT islno,station_code,arrival_time,departure_time,distance FROM route WHERE train_number = in_train_number;
+END $$
+
+DELIMITER ; 
+
+DELIMITER $$
+CREATE PROCEDURE check_seat_availability(IN in_train_number VARCHAR(10),IN in_date DATE,IN in_class VARCHAR(10))
+BEGIN
+    DECLARE available_seats INT;
+    
+    if(in_class = 'first_ac') then
+        SELECT first_ac_available INTO available_seats FROM train_inventory WHERE train_number = in_train_number AND travel_date = in_date;
+    elseif(in_class = 'second_ac') then
+        SELECT second_ac_available INTO available_seats FROM train_inventory WHERE train_number = in_train_number AND travel_date = in_date;
+    elseif(in_class = 'third_ac') then
+        SELECT third_ac_available INTO available_seats FROM train_inventory WHERE train_number = in_train_number AND travel_date = in_date;
+    elseif(in_class = 'sleeper') then
+        SELECT sleeper_available INTO available_seats FROM train_inventory WHERE train_number = in_train_number AND travel_date = in_date;
+    elseif(in_class = 'general') then
+        SELECT general_available INTO available_seats FROM train_inventory WHERE train_number = in_train_number AND travel_date = in_date;
+    end if;
+    SELECT available_seats;
+   
+END $$
+
+DELIMITER ;
+
+--lisiting all passenger on a trainon particular date
+DELIMITER $$
+CREATE PROCEDURE list_passengers_on_train(IN in_train_number VARCHAR(10), IN in_date DATE,IN in_status VARCHAR(20))
+BEGIN
+    if(in_status = 'all') then
+        SELECT ticket.pnr_number,passenger_name,ticket_class,age,gender,seat_number,coach,status FROM ticket,passenger WHERE ticket.train_number = in_train_number AND ticket.date_of_travel = in_date AND ticket.pnr_number=passenger.pnr_number;
+    else
+        SELECT ticket.pnr_number,passenger_name,ticket_class,age,gender,seat_number,coach,status FROM ticket,passenger WHERE ticket.train_number = in_train_number AND ticket.date_of_travel = in_date AND ticket.pnr_number=passenger.pnr_number AND ticket.status = in_status;
+    end if;
+END $$
+
+DELIMITER ;
+
+
+
+
+
+
+
+
