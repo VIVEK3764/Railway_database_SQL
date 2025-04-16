@@ -223,6 +223,7 @@
         <a href="/train-schedule.html" class="nav-button">Train Schedule</a>
         <a href="/seat-availability.html" class="nav-button">Seat Availability</a>
         <a href="/passenger-list.html" class="nav-button">Passenger List</a>
+        <a href="/ticket-details.html" class="nav-button">Ticket Details</a>
     </div>
 
     <div class="search-container">
@@ -342,7 +343,7 @@
                     // Update status counts
                     document.getElementById('confirmed-count').textContent = statusCounts['CONFIRMED'] || 0;
                     document.getElementById('rac-count').textContent = statusCounts['RAC'] || 0;
-                    document.getElementById('waiting-count').textContent = statusCounts['WAITING'] || 0;
+                    document.getElementById('waiting-count').textContent = statusCounts['WAITLISTED'] || 0;
                     document.getElementById('cancelled-count').textContent = statusCounts['CANCELLED'] || 0;
 
                     // Update passenger list

@@ -231,6 +231,51 @@
         .remove-passenger:active {
             background: #bd2130;
         }
+
+        .payment-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .payment-section h3 {
+            margin-top: 0;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .payment-details {
+            margin-top: 15px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #fff;
+        }
+
+        #payment-mode {
+            margin-bottom: 15px;
+        }
+
+        .payment-details input,
+        .payment-details select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button[type="submit"] {
+            background-color: #2196F3;
+            margin-top: 20px;
+        }
     </style>
 </head>
 
@@ -288,6 +333,15 @@
                             <option value="O">Other</option>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label for="concession-1">Concession Type:</label>
+                        <select id="concession-1" name="concession" onchange="updateFare()">
+                            <option value="none">No Concession</option>
+                            <option value="senior">Senior Citizen</option>
+                            <option value="student">Student</option>
+                            <option value="disabled">Disabled</option>
+                        </select>
+                    </div>
                 </div>
             </div>
             <button type="button" id="add-passenger">Add Another Passenger</button>
@@ -295,9 +349,81 @@
                 <h3>Fare Details</h3>
                 <p>Base Fare per Passenger: <span id="base-fare">₹500</span></p>
                 <p>Number of Passengers: <span id="passenger-count">1</span></p>
-                <p>Total Fare: <span id="total-fare">₹500</span></p>
+                <div id="concession-details"></div>
+                <p><strong>Total Fare: <span id="total-fare">₹500</span></strong></p>
             </div>
-            <button type="submit">Confirm Booking</button>
+
+            <div class="payment-section">
+                <h3>Payment Mode</h3>
+                <div class="form-group">
+                    <label for="payment-mode">Select Payment Mode:</label>
+                    <select id="payment-mode" name="payment-mode" required>
+                        <option value="">Select Payment Mode</option>
+                        <option value="upi">UPI</option>
+                        <option value="wallet">Digital Wallet</option>
+                        <option value="netbanking">Net Banking</option>
+                        <option value="card">Debit/Credit Card</option>
+                    </select>
+                </div>
+
+                <!-- UPI Section -->
+                <div id="upi-section" class="payment-details" style="display: none;">
+                    <div class="form-group">
+                        <label for="upi-id">UPI ID:</label>
+                        <input type="text" id="upi-id" placeholder="username@bank"
+                            pattern="[a-zA-Z0-9\.\-_]{2,256}@[a-zA-Z]{2,64}">
+                    </div>
+                </div>
+
+                <!-- Card Section -->
+                <div id="card-section" class="payment-details" style="display: none;">
+                    <div class="form-group">
+                        <label for="card-number">Card Number:</label>
+                        <input type="text" id="card-number" placeholder="XXXX XXXX XXXX XXXX" maxlength="19">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="expiry-date">Expiry Date:</label>
+                            <input type="text" id="expiry-date" placeholder="MM/YY" maxlength="5">
+                        </div>
+                        <div class="form-group">
+                            <label for="cvv">CVV:</label>
+                            <input type="password" id="cvv" placeholder="XXX" maxlength="3">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Net Banking Section -->
+                <div id="netbanking-section" class="payment-details" style="display: none;">
+                    <div class="form-group">
+                        <label for="bank-select">Select Bank:</label>
+                        <select id="bank-select">
+                            <option value="">Select Bank</option>
+                            <option value="sbi">State Bank of India</option>
+                            <option value="hdfc">HDFC Bank</option>
+                            <option value="icici">ICICI Bank</option>
+                            <option value="axis">Axis Bank</option>
+                            <option value="pnb">Punjab National Bank</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Wallet Section -->
+                <div id="wallet-section" class="payment-details" style="display: none;">
+                    <div class="form-group">
+                        <label for="wallet-select">Select Wallet:</label>
+                        <select id="wallet-select">
+                            <option value="">Select Wallet</option>
+                            <option value="paytm">Paytm</option>
+                            <option value="phonepe">PhonePe</option>
+                            <option value="gpay">Google Pay</option>
+                            <option value="amazonpay">Amazon Pay</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit">Confirm Booking & Pay</button>
         </form>
     </div>
 
@@ -459,6 +585,15 @@
                         <option value="O">Other</option>
                     </select>
                 </div>
+                <div class="form-group">
+                    <label for="concession-${passengerCount}">Concession Type:</label>
+                    <select id="concession-${passengerCount}" name="concession" onchange="updateFare()">
+                        <option value="none">No Concession</option>
+                        <option value="senior">Senior Citizen</option>
+                        <option value="student">Student</option>
+                        <option value="disabled">Disabled</option>
+                    </select>
+                </div>
             `;
             container.appendChild(newPassenger);
 
@@ -488,19 +623,93 @@
 
             const selectedClass = document.getElementById('travel-class').value;
             const baseFare = classFares[selectedClass];
-            const passengerCount = document.querySelectorAll('.passenger-form').length;
+            const passengerForms = document.querySelectorAll('.passenger-form');
+            let totalFare = 0;
+            const concessionDetails = [];
+
+            passengerForms.forEach((form, index) => {
+                const concessionType = form.querySelector(`#concession-${index + 1}`).value;
+                let passengerFare = baseFare;
+                let concessionPercentage = 0;
+
+                switch (concessionType) {
+                    case 'senior':
+                    case 'disabled':
+                        concessionPercentage = 25;
+                        passengerFare = baseFare * 0.75; // 25% off
+                        break;
+                    case 'student':
+                        concessionPercentage = 15;
+                        passengerFare = baseFare * 0.85; // 15% off
+                        break;
+                }
+
+                if (concessionPercentage > 0) {
+                    concessionDetails.push(`Passenger ${index + 1}: ${concessionPercentage}% off (${concessionType})`);
+                }
+
+                totalFare += passengerFare;
+            });
 
             document.getElementById('base-fare').textContent = `₹${baseFare}`;
-            document.getElementById('passenger-count').textContent = passengerCount;
-            document.getElementById('total-fare').textContent = `₹${baseFare * passengerCount}`;
+            document.getElementById('passenger-count').textContent = passengerForms.length;
+
+            // Update concession details
+            const concessionDetailsDiv = document.getElementById('concession-details');
+            if (concessionDetails.length > 0) {
+                concessionDetailsDiv.innerHTML = '<p><strong>Applied Concessions:</strong></p>' +
+                    concessionDetails.map(detail => `<p>${detail}</p>`).join('');
+            } else {
+                concessionDetailsDiv.innerHTML = '';
+            }
+
+            document.getElementById('total-fare').textContent = `₹${Math.round(totalFare)}`;
         }
 
         // Add event listeners for fare updates
         document.getElementById('travel-class').addEventListener('change', updateFare);
 
-        // Handle form submission
+        // Add this to your existing JavaScript
+        document.getElementById('payment-mode').addEventListener('change', function () {
+            // Hide all payment sections first
+            document.querySelectorAll('.payment-details').forEach(section => {
+                section.style.display = 'none';
+            });
+
+            // Show the selected payment section
+            const selectedMode = this.value;
+            if (selectedMode) {
+                const section = document.getElementById(`${selectedMode}-section`);
+                if (section) {
+                    section.style.display = 'block';
+                }
+            }
+        });
+
+        // Add these functions to handle payment input formatting
+        document.getElementById('card-number')?.addEventListener('input', function (e) {
+            let value = e.target.value.replace(/\D/g, '');
+            value = value.replace(/(.{4})/g, '$1 ').trim();
+            e.target.value = value;
+        });
+
+        document.getElementById('expiry-date')?.addEventListener('input', function (e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                value = value.slice(0, 2) + '/' + value.slice(2);
+            }
+            e.target.value = value;
+        });
+
+        // Update the form submission to include payment mode
         document.getElementById('booking-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            const paymentMode = document.getElementById('payment-mode').value;
+            if (!paymentMode) {
+                alert('Please select a payment mode');
+                return;
+            }
 
             // Collect all passenger details
             const passengers = [];
@@ -508,12 +717,14 @@
                 const nameField = document.getElementById(`passenger-name-${i}`);
                 const ageField = document.getElementById(`age-${i}`);
                 const genderField = document.getElementById(`gender-${i}`);
+                const concessionField = document.getElementById(`concession-${i}`);
 
-                if (nameField && ageField && genderField) {
+                if (nameField && ageField && genderField && concessionField) {
                     passengers.push({
                         name: nameField.value,
                         age: parseInt(ageField.value),
-                        gender: genderField.value
+                        gender: genderField.value,
+                        concession: concessionField.value
                     });
                 }
             }
@@ -528,7 +739,7 @@
                 no_of_passenger: passengers.length,
                 total_fare: parseInt(document.getElementById('total-fare').textContent.replace('₹', '')),
                 ticket_type: 'online',
-                payment_mode: 'online',
+                payment_mode: paymentMode,
                 status: 'confirmed'
             };
 
@@ -544,7 +755,6 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    // Redirect to the ticket page instead of showing alert
                     window.location.href = data.redirect_url;
                 } else {
                     alert('Error: ' + (data.message || 'Failed to book ticket'));

@@ -80,7 +80,7 @@ app.post('/insert_user', (req, res) => {
     });
 });
 
-// Get ticket details endpoint
+// Route to get ticket details by PNR
 app.get('/ticket-details', (req, res) => {
     const pnr = req.query.pnr;
 
@@ -126,6 +126,129 @@ app.get('/ticket-details', (req, res) => {
             });
         });
     });
+});
+// app.get('/ticket-details', async (req, res) => {
+//     const pnr = req.query.pnr;
+
+//     if (!pnr) {
+//         return res.json({ success: false, message: 'PNR number is required' });
+//     }
+
+//     try {
+//         // Get ticket details with train information
+//         const [ticketRows] = await db.promise().query(
+//             `SELECT 
+//                 t.pnr_number,
+//                 t.train_number,
+//                 t.user_id,
+//                 DATE_FORMAT(t.date_of_book, '%Y-%m-%d') as booking_date,
+//                 t.boarding_station,
+//                 t.destination_station,
+//                 DATE_FORMAT(t.date_of_travel, '%Y-%m-%d') as journey_date,
+//                 t.no_of_passenger,
+//                 t.ticket_class,
+//                 t.total_fare,
+//                 t.transaction_id,
+//                 t.ticket_type,
+//                 t.payment_mode,
+//                 t.status,
+//                 tr.train_name
+//             FROM ticket t 
+//             JOIN train tr ON t.train_number = tr.train_number 
+//             WHERE t.pnr_number = ?`,
+//             [pnr]
+//         );
+
+//         if (ticketRows.length === 0) {
+//             return res.json({ success: false, message: 'Ticket not found' });
+//         }
+
+//         const ticket = ticketRows[0];
+
+//         // Get passenger details
+//         const [passengerRows] = await db.promise().query(
+//             'SELECT passenger_name, age, gender, seat_number, coach FROM passenger WHERE pnr_number = ?',
+//             [pnr]
+//         );
+
+//         // Calculate fare details
+//         const baseFarePerPassenger = parseFloat(ticket.total_fare) / ticket.no_of_passenger;
+
+//         res.json({
+//             success: true,
+//             booking_id: ticket.pnr_number,
+//             journey_details: {
+//                 train_number: `'${ticket.train_number}'`,
+//                 train_name: ticket.train_name,
+//                 date_of_journey: ticket.journey_date,
+//                 from_station: ticket.boarding_station,
+//                 to_station: ticket.destination_station,
+//                 class: ticket.ticket_class,
+//                 booking_date: ticket.booking_date,
+//                 status: ticket.status,
+//                 ticket_type: ticket.ticket_type,
+//                 payment_mode: ticket.payment_mode,
+//                 transaction_id: ticket.transaction_id
+//             },
+//             passenger_details: passengerRows.map(passenger => ({
+//                 name: passenger.passenger_name || 'undefined',
+//                 age: passenger.age || '',
+//                 gender: passenger.gender || 'Other',
+//                 coach: passenger.coach || '',
+//                 seat_no: passenger.seat_number || ''
+//             })),
+//             fare_details: {
+//                 base_fare_per_passenger: baseFarePerPassenger.toFixed(2),
+//                 number_of_passengers: ticket.no_of_passenger,
+//                 total_fare: parseFloat(ticket.total_fare).toFixed(2)
+//             }
+//         });
+
+//     } catch (error) {
+//         console.error('Database error:', error);
+//         res.json({ success: false, message: 'Error fetching ticket details' });
+//     }
+// });
+
+// Route to cancel ticket
+app.post('/cancel-ticket', async (req, res) => {
+    const { pnr } = req.body;
+
+    if (!pnr) {
+        return res.json({ success: false, message: 'PNR number is required' });
+    }
+
+    try {
+        // Start a transaction
+        await db.promise().query('START TRANSACTION');
+
+        // Update ticket status
+        // await db.promise().query(
+        //     'UPDATE ticket SET status = "CANCELLED" WHERE pnr_number = ?',
+        //     [pnr]
+        // );
+        await db.promise().query(
+            'call cancel_ticket(?)',
+            [pnr]
+        );
+
+        // Update passenger status
+        // await db.promise().query(
+        //     'UPDATE passenger SET status = "CANCELLED" WHERE pnr_number = ?',
+        //     [pnr]
+        // );
+
+        // Commit the transaction
+        await db.promise().query('COMMIT');
+
+        res.json({ success: true, message: 'Ticket cancelled successfully' });
+
+    } catch (error) {
+        // Rollback in case of error
+        await db.promise().query('ROLLBACK');
+        console.error('Database error:', error);
+        res.json({ success: false, message: 'Error cancelling ticket' });
+    }
 });
 
 // Book ticket endpoint
@@ -235,8 +358,8 @@ app.post('/book-ticket', (req, res) => {
         const date_of_book = formatDateForMySQL(new Date());
         const transaction_id = 'TXN' + Date.now();
         const ticket_type = 'online';
-        const payment_mode = 'UPI';
-        const status = 'CONFIRMED';
+        const payment_mode = req.body.payment_mode;
+        const status = 'WAITLISTED';
 
         // Calculate fare
         const classFares = {
