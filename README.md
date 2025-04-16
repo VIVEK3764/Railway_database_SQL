@@ -179,7 +179,7 @@ The system includes comprehensive error handling for:
 
 ## Support
 
-For support, email your_email@example.com or create an issue in the repository.
+For support, email vivek_2301cs63@iitp.ac.in or create an issue in the repository.
 
 ## License
 
