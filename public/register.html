@@ -4,191 +4,426 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Registration - Railway System</title>
+    <title>User Registration - Indian Railways</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        :root {
+            --primary-color: #0056b3;
+            --secondary-color: #e31837;
+            --accent-color: #ffc107;
+            --text-color: #333;
+            --light-bg: #f8f9fa;
+            --white: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
+            background-color: var(--light-bg);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        /* Header Styles */
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--white);
+            padding: 1rem 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-container {
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .container {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        h1 {
-            color: #333;
-            text-align: center;
+        .logo img {
+            height: 50px;
+            width: auto;
         }
 
-        .nav-buttons {
-            text-align: center;
-            margin-bottom: 20px;
+        .logo h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
         }
 
-        .nav-buttons a {
-            display: inline-block;
-            padding: 10px 20px;
-            margin: 0 10px;
-            background-color: #4CAF50;
-            color: white;
+        .nav-menu {
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav-menu a {
+            color: var(--white);
             text-decoration: none;
+            padding: 8px 15px;
             border-radius: 4px;
             transition: background-color 0.3s;
         }
 
-        .nav-buttons a:hover {
-            background-color: #45a049;
+        .nav-menu a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
         }
 
-        .registration-form {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+        /* Main Content Styles */
+        .main-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 20px;
+        }
+
+        .registration-container {
+            background-color: var(--white);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .registration-container h2 {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            text-align: center;
+            font-size: 1.8rem;
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 0.5rem;
         }
 
         .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
+            margin-bottom: 1.5rem;
         }
 
-        label {
-            font-weight: bold;
-            color: #555;
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-color);
         }
 
-        input,
-        select {
-            padding: 8px;
+        .form-group input {
+            width: 100%;
+            padding: 12px;
             border: 1px solid #ddd;
             border-radius: 4px;
-            font-size: 16px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
         }
 
         button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px;
+            background-color: var(--secondary-color);
+            color: var(--white);
+            padding: 12px 24px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 16px;
-            margin-top: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
         }
 
         button:hover {
-            background-color: #45a049;
+            background-color: #c1122f;
+            transform: translateY(-2px);
         }
 
-        .message {
-            margin-top: 15px;
-            padding: 10px;
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 1rem;
             border-radius: 4px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        /* Footer Styles */
+        .footer {
+            background-color: var(--primary-color);
+            color: var(--white);
+            padding: 2rem 0;
+            margin-top: 3rem;
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+        }
+
+        .footer-section h3 {
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section ul li {
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-section a {
+            color: var(--white);
+            text-decoration: none;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        }
+
+        .footer-section a:hover {
+            opacity: 1;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .social-links a {
+            color: var(--white);
+            font-size: 1.5rem;
+        }
+
+        .copyright {
             text-align: center;
+            padding-top: 2rem;
+            margin-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .success {
-            background-color: #dff0d8;
-            color: #3c763d;
-        }
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
 
-        .error {
-            background-color: #f2dede;
-            color: #a94442;
+            .nav-menu {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <div class="nav-buttons">
-            <a href="/" class="nav-button">Search Trains</a>
-            <a href="/register.html" class="nav-button">User Registration</a>
-            <a href="/pnr-status.html" class="nav-button">PNR Status</a>
-            <a href="/train-schedule.html" class="nav-button">Train Schedule</a>
-            <a href="/seat-availability.html" class="nav-button">Seat Availability</a>
-            <a href="/passenger-list.html" class="nav-button">Passenger List</a>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <div class="logo">
+                <img src="https://upload.wikimedia.org/wikipedia/en/thumb/8/83/Indian_Railways.svg/1200px-Indian_Railways.svg.png"
+                    alt="Indian Railways Logo">
+                <h1>Indian Railways</h1>
+            </div>
+            <nav class="nav-menu">
+                <a href="/"><i class="fas fa-home"></i> Home</a>
+                <a href="/register.html"><i class="fas fa-user-plus"></i> Register</a>
+                <a href="/pnr-status.html"><i class="fas fa-ticket-alt"></i> PNR Status</a>
+                <a href="/train-schedule.html"><i class="fas fa-train"></i> Train Schedule</a>
+                <a href="/seat-availability.html"><i class="fas fa-chair"></i> Seat Availability</a>
+            </nav>
         </div>
-        <h1>User Registration</h1>
-        <form id="userForm" class="registration-form">
-            <div class="form-group">
-                <label for="user_name">Full Name:</label>
-                <input type="text" id="user_name" name="user_name" required>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-container">
+        <div class="registration-container">
+            <h2><i class="fas fa-user-plus"></i> User Registration</h2>
+            <div id="successMessage" class="success-message">
+                <i class="fas fa-check-circle"></i> Registration successful! You can now login to your account.
             </div>
-            <div class="form-group">
-                <label for="age">Age:</label>
-                <input type="number" id="age" name="age" min="1" max="120">
+            <div id="errorMessage" class="error-message">
+                <i class="fas fa-exclamation-circle"></i> <span id="errorText">Error registering user. Please try
+                    again.</span>
             </div>
-            <div class="form-group">
-                <label for="gender">Gender:</label>
-                <select id="gender" name="gender" required>
-                    <option value="">Select Gender</option>
-                    <option value="M">Male</option>
-                    <option value="F">Female</option>
-                    <option value="O">Other</option>
-                </select>
+            <form id="registrationForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="firstName"><i class="fas fa-user"></i> First Name</label>
+                        <input type="text" id="firstName" name="firstName" required placeholder="Enter your first name">
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName"><i class="fas fa-user"></i> Last Name</label>
+                        <input type="text" id="lastName" name="lastName" required placeholder="Enter your last name">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="email"><i class="fas fa-envelope"></i> Email Address</label>
+                    <input type="email" id="email" name="email" required placeholder="Enter your email address">
+                </div>
+                <div class="form-group">
+                    <label for="phone"><i class="fas fa-phone"></i> Phone Number</label>
+                    <input type="tel" id="phone" name="phone" required placeholder="Enter your phone number">
+                </div>
+                <div class="form-group">
+                    <label for="password"><i class="fas fa-lock"></i> Password</label>
+                    <input type="password" id="password" name="password" required placeholder="Enter your password">
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword"><i class="fas fa-lock"></i> Confirm Password</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required
+                        placeholder="Confirm your password">
+                </div>
+                <button type="submit"><i class="fas fa-user-plus"></i> Register</button>
+            </form>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="/"><i class="fas fa-home"></i> Home</a></li>
+                    <li><a href="/register.html"><i class="fas fa-user-plus"></i> Register</a></li>
+                    <li><a href="/pnr-status.html"><i class="fas fa-ticket-alt"></i> PNR Status</a></li>
+                    <li><a href="/train-schedule.html"><i class="fas fa-train"></i> Train Schedule</a></li>
+                </ul>
             </div>
-            <div class="form-group">
-                <label for="phone_number">Phone Number:</label>
-                <input type="tel" id="phone_number" name="phone_number" required>
+            <div class="footer-section">
+                <h3>Services</h3>
+                <ul>
+                    <li><a href="/seat-availability.html"><i class="fas fa-chair"></i> Seat Availability</a></li>
+                    <li><a href="/passenger-list.html"><i class="fas fa-users"></i> Passenger List</a></li>
+                    <li><a href="/ticket-details.html"><i class="fas fa-file-alt"></i> Ticket Details</a></li>
+                </ul>
             </div>
-            <div class="form-group">
-                <label for="email_id">Email:</label>
-                <input type="email" id="email_id" name="email_id" required>
+            <div class="footer-section">
+                <h3>Contact Us</h3>
+                <ul>
+                    <li><i class="fas fa-phone"></i> 139 (Toll Free)</li>
+                    <li><i class="fas fa-envelope"></i> support@indianrailways.com</li>
+                    <li><i class="fas fa-map-marker-alt"></i> New Delhi, India</li>
+                </ul>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-youtube"></i></a>
+                </div>
             </div>
-            <button type="submit">Register</button>
-        </form>
-        <div id="message" class="message" style="display: none;"></div>
-    </div>
+        </div>
+        <div class="copyright">
+            <p>&copy; 2024 Indian Railways. All Rights Reserved.</p>
+        </div>
+    </footer>
 
     <script>
-        document.getElementById('userForm').addEventListener('submit', async (e) => {
+        document.getElementById('registrationForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
+            // Password validation
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (password !== confirmPassword) {
+                showError('Passwords do not match');
+                return;
+            }
+
             const formData = {
-                user_name: document.getElementById('user_name').value,
-                age: document.getElementById('age').value,
-                gender: document.getElementById('gender').value,
-                phone_number: document.getElementById('phone_number').value,
-                email_id: document.getElementById('email_id').value
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                password: password
             };
 
             try {
                 const response = await fetch('/insert_user', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(formData)
                 });
 
                 const data = await response.json();
-                const messageDiv = document.getElementById('message');
 
-                if (data.success) {
-                    messageDiv.className = 'message success';
-                    messageDiv.textContent = 'User registered successfully!';
-                    document.getElementById('userForm').reset();
+                if (response.ok) {
+                    showSuccess();
+                    document.getElementById('registrationForm').reset();
                 } else {
-                    messageDiv.className = 'message error';
-                    messageDiv.textContent = 'Error: ' + data.message;
+                    showError(data.message || 'Error registering user');
                 }
-
-                messageDiv.style.display = 'block';
             } catch (error) {
-                const messageDiv = document.getElementById('message');
-                messageDiv.className = 'message error';
-                messageDiv.textContent = 'An error occurred while submitting the form';
-                messageDiv.style.display = 'block';
                 console.error('Error:', error);
+                showError('Error connecting to server');
             }
         });
+
+        function showSuccess() {
+            const successMessage = document.getElementById('successMessage');
+            const errorMessage = document.getElementById('errorMessage');
+
+            successMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+
+            setTimeout(() => {
+                successMessage.style.display = 'none';
+            }, 5000);
+        }
+
+        function showError(message) {
+            const successMessage = document.getElementById('successMessage');
+            const errorMessage = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+
+            errorText.textContent = message;
+            successMessage.style.display = 'none';
+            errorMessage.style.display = 'block';
+
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 5000);
+        }
     </script>
 </body>
 
