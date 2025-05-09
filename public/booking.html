@@ -629,11 +629,58 @@
             document.getElementById('booking-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
 
-                // Function to format date for MySQL
-                function formatDateForMySQL(dateString) {
-                    const date = new Date(dateString);
+                // Function to format date for MySQL (YYYY-MM-DD)
+                // function formatDateForMySQL(dateString) {
+                //     // Parse the input date string
+                //     const date = new Date(dateString);
+
+                //     // Get year, month, and day
+                //     const year = date.getFullYear();
+                //     // Add 1 to month since getMonth() returns 0-11
+                //     const month = String(date.getMonth() + 1).padStart(2, '0');
+                //     const day = String(date.getDate()).padStart(2, '0');
+
+                //     // Return in YYYY-MM-DD format
+                //     return `${year}-${month}-${day}`;
+                // }
+
+                const formatDateForMySQL = (dateStr) => {
+            try {
+                if (!dateStr) return '';
+
+                // If dateStr is not a string, convert it to string
+                if (typeof dateStr !== 'string') {
+                    dateStr = String(dateStr);
+                }
+
+                // If it's already in YYYY-MM-DD format, return as is
+                if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+                    return dateStr;
+                }
+
+                // If it's in DD/MM/YYYY format, convert to YYYY-MM-DD
+                if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
+                    const [day, month, year] = dateStr.split('/');
+                    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                }
+
+                // If it's a Date object
+                if (dateStr instanceof Date) {
+                    return dateStr.toISOString().split('T')[0];
+                }
+
+                // Try to parse as date
+                const date = new Date(dateStr);
+                if (!isNaN(date.getTime())) {
                     return date.toISOString().split('T')[0];
                 }
+
+                throw new Error('Invalid date format');
+            } catch (error) {
+                console.error('Date formatting error:', error);
+                return new Date().toISOString().split('T')[0]; // Return current date as fallback
+            }
+        };
 
                 // Collect passenger data
                 const passengers = [];
@@ -653,17 +700,20 @@
                     }
                 }
 
+                // Format the travel date
+                const formattedTravelDate = formatDateForMySQL(displayDate);
+
                 const bookingData = {
                     train_number: trainNumber,
                     source_station: sourceCode,
                     destination_station: destinationCode,
-                    travel_date: formatDateForMySQL(displayDate),
+                    travel_date: formattedTravelDate,
                     ticket_class: document.getElementById('travel-class').value,
                     passengers: passengers,
                     no_of_passenger: passengers.length,
                     total_fare: parseInt(document.getElementById('total-fare').textContent.replace('₹', '')),
                     ticket_type: 'online',
-                    payment_mode: 'online', // Default payment mode
+                    payment_mode: 'online',
                     status: 'confirmed'
                 };
 
@@ -681,7 +731,14 @@
                     if (data.success) {
                         window.location.href = data.redirect_url;
                     } else {
-                        alert('Error: ' + (data.message || 'Failed to book ticket'));
+                        if (response.status === 401) {
+                            // User is not logged in
+                            if (confirm('Please login to book tickets. Would you like to login now?')) {
+                                window.location.href = '/login.html';
+                            }
+                        } else {
+                            alert('Error: ' + (data.message || 'Failed to book ticket'));
+                        }
                     }
                 } catch (error) {
                     console.error('Error:', error);

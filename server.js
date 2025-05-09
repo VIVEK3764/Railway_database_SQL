@@ -2,6 +2,8 @@ const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
 const path = require('path');
+const bcrypt = require('bcrypt');
+const session = require('express-session');
 require('dotenv').config();
 const fs = require('fs');
 
@@ -12,6 +14,14 @@ const port = 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
+
+// Session middleware
+app.use(session({
+    secret: 'your-secret-key',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false } // Set to true if using HTTPS
+}));
 
 // Database configuration
 const db = mysql.createConnection({
@@ -75,20 +85,36 @@ app.post('/search-trains', (req, res) => {
 });
 
 // Handle form submission
-app.post('/insert_user', (req, res) => {
-    const { user_name, age, gender, phone_number, email_id } = req.body;
+app.post('/insert_user', async (req, res) => {
+    const { user_name, age, gender, phone_number, email_id, password } = req.body;
 
-    const sql = 'INSERT INTO user (user_name, age, gender, phone_number, email_id) VALUES (?, ?, ?, ?, ?)';
-    const values = [user_name, age, gender, phone_number, email_id];
+    try {
+        // Hash the password
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    db.query(sql, values, (err, result) => {
-        if (err) {
-            console.error('Error inserting data:', err);
-            res.status(500).json({ success: false, message: err.message });
-            return;
-        }
-        res.json({ success: true, message: 'User registered successfully' });
-    });
+        const sql = 'INSERT INTO user (user_name, age, gender, phone_number, email_id, password) VALUES (?, ?, ?, ?, ?, ?)';
+        const values = [user_name, age, gender, phone_number, email_id, hashedPassword];
+
+        db.query(sql, values, (err, result) => {
+            if (err) {
+                console.error('Error inserting data:', err);
+                if (err.code === 'ER_DUP_ENTRY') {
+                    if (err.message.includes('phone_number')) {
+                        return res.status(400).json({ success: false, message: 'Phone number already registered' });
+                    }
+                    if (err.message.includes('email_id')) {
+                        return res.status(400).json({ success: false, message: 'Email already registered' });
+                    }
+                }
+                return res.status(500).json({ success: false, message: 'Error registering user' });
+            }
+            res.json({ success: true, message: 'User registered successfully' });
+        });
+    } catch (error) {
+        console.error('Error hashing password:', error);
+        res.status(500).json({ success: false, message: 'Error processing registration' });
+    }
 });
 
 // Route to get ticket details by PNR
@@ -262,204 +288,189 @@ app.post('/cancel-ticket', async (req, res) => {
     }
 });
 
-// Book ticket endpoint
-app.post('/book-ticket', (req, res) => {
-    const { train_number, source_station, destination_station, travel_date, ticket_class, passengers } = req.body;
+// Login endpoint
+app.post('/login', async (req, res) => {
+    const { email_id, password } = req.body;
 
-    // Generate PNR number
-    const pnr_number = 'PNR' + Math.random().toString(36).substr(2, 8).toUpperCase();
+    try {
+        // Get user from database
+        const [users] = await db.promise().query(
+            'SELECT * FROM user WHERE email_id = ?',
+            [email_id]
+        );
 
-    // Format dates properly for MySQL
-    const formatDateForMySQL = (dateStr) => {
-        try {
-            if (typeof dateStr !== 'string') {
-                dateStr = String(dateStr);
-            }
-            if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-                return dateStr;
-            }
-            if (dateStr.includes('/')) {
-                const [day, month, year] = dateStr.split('/');
-                return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-            }
-            if (dateStr instanceof Date) {
-                return dateStr.toISOString().split('T')[0];
-            }
-            const date = new Date(dateStr);
-            if (!isNaN(date.getTime())) {
-                return date.toISOString().split('T')[0];
-            }
-            throw new Error('Invalid date format');
-        } catch (error) {
-            console.error('Date formatting error:', error);
-            return new Date().toISOString().split('T')[0];
-        }
-    };
-
-    const travel_date_formatted = formatDateForMySQL(travel_date);
-
-    // First, check seat availability in train_inventory
-    const checkInventoryQuery = `
-        SELECT 
-            first_ac_available,
-            second_ac_available,
-            third_ac_available,
-            sleeper_available,
-            general_available
-        FROM train_inventory 
-        WHERE train_number = ? 
-        AND travel_date = ?
-    `;
-
-    db.query(checkInventoryQuery, [train_number, travel_date_formatted], (err, inventoryResults) => {
-        if (err) {
-            console.error('Error checking inventory:', err);
-            return res.status(500).json({ error: 'Failed to check seat availability' });
-        }
-
-        // If no inventory record exists, return error
-        if (inventoryResults.length === 0) {
-            return res.status(400).json({ error: 'No inventory available for this train on selected date' });
-        }
-
-        const inventory = inventoryResults[0];
-
-        // Get the available seats for the selected class
-        const availabilityMap = {
-            'first_ac': inventory.first_ac_available,
-            'second_ac': inventory.second_ac_available,
-            'third_ac': inventory.third_ac_available,
-            'sleeper': inventory.sleeper_available,
-            'general': inventory.general_available
-        };
-
-        const seatsAvailable = availabilityMap[ticket_class];
-        const seatsNeeded = passengers.length;
-
-        if (!seatsAvailable) {
-            return res.status(400).json({ error: 'Invalid class selected' });
-        }
-
-        if (seatsAvailable < seatsNeeded) {
-            return res.status(400).json({ error: 'Not enough seats available in selected class' });
-        }
-
-        // Calculate the last seat number based on class and available seats
-        const totalSeatsPerClass = {
-            'first_ac': 72,
-            'second_ac': 72,
-            'third_ac': 216,
-            'sleeper': 432,
-            'general': 72
-        };
-
-        const maxSeats = totalSeatsPerClass[ticket_class];
-        const seatsBooked = totalSeatsPerClass[ticket_class] - seatsAvailable;
-        let lastSeatNumber = seatsBooked;
-
-        // Proceed with booking
-        proceedWithBooking(seatsAvailable, lastSeatNumber, maxSeats);
-    });
-
-    function proceedWithBooking(seatsAvailable, lastSeatNumber, maxSeats) {
-        const seatsNeeded = passengers.length;
-
-        // Hardcoded values
-        const user_id = 1;
-        const date_of_book = formatDateForMySQL(new Date());
-        const transaction_id = 'TXN' + Date.now();
-        const ticket_type = 'online';
-        const payment_mode = req.body.payment_mode;
-        const status = 'WAITLISTED';
-
-        // Calculate fare
-        const classFares = {
-            'sleeper': 500,
-            'third_ac': 1000,
-            'second_ac': 1500,
-            'first_ac': 2000,
-            'general': 300
-        };
-
-        const baseFare = classFares[ticket_class] || 500;
-        const total_fare = passengers.length * baseFare;
-
-        // Create the ticket
-        const createTicketQuery = `
-            INSERT INTO ticket (
-                pnr_number, train_number, user_id, date_of_book, boarding_station,
-                destination_station, date_of_travel, no_of_passenger, ticket_class,
-                total_fare, transaction_id, ticket_type, payment_mode, status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
-
-        db.query(createTicketQuery, [
-            pnr_number, train_number, user_id, date_of_book, source_station,
-            destination_station, travel_date_formatted, passengers.length, ticket_class,
-            total_fare, transaction_id, ticket_type, payment_mode, status
-        ], (err, result) => {
-            if (err) {
-                console.error('Error creating ticket:', err);
-                return res.status(500).json({ error: 'Failed to create ticket' });
-            }
-
-            // Insert passenger details
-            const insertPassengerQuery = `
-                INSERT INTO passenger (passenger_name, pnr_number, age, gender, seat_number, coach)
-                VALUES (?, ?, ?, ?, ?, ?)
-            `;
-
-            // Insert each passenger with proper seat numbering
-            const passengerPromises = passengers.map(passenger => {
-                lastSeatNumber++;
-                const seatNumber = lastSeatNumber % maxSeats || maxSeats;
-                const coachNumber = Math.ceil(lastSeatNumber / maxSeats);
-                const formattedSeatNumber = seatNumber.toString().padStart(2, '0');
-                const formattedCoachNumber = `C${coachNumber.toString().padStart(2, '0')}`;
-
-                return new Promise((resolve, reject) => {
-                    db.query(insertPassengerQuery,
-                        [passenger.name, pnr_number, passenger.age, passenger.gender.charAt(0).toUpperCase(),
-                            formattedSeatNumber, formattedCoachNumber],
-                        (err, result) => {
-                            if (err) {
-                                reject(err);
-                            } else {
-                                resolve(result);
-                            }
-                        }
-                    );
-                });
+        if (users.length === 0) {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid credentials'
             });
+        }
 
-            // Update train inventory based on class using stored procedure
-            const updateInventoryQuery = `
-                CALL update_seat(?, ?, ?, ?)
-            `;
+        const user = users[0];
 
-            // Wait for all passenger insertions to complete
-            Promise.all(passengerPromises)
-                .then(() => {
-                    // Update inventory using stored procedure
-                    db.query(updateInventoryQuery,
-                        [train_number, travel_date_formatted, seatsNeeded, ticket_class],
-                        (err, result) => {
-                            if (err) {
-                                console.error('Error updating inventory:', err);
-                                return res.status(500).json({ error: 'Failed to update inventory' });
-                            }
-                            res.json({
-                                success: true,
-                                pnr_number,
-                                redirect_url: `/show-ticket.html?pnr=${pnr_number}`
-                            });
-                        }
-                    );
-                })
-                .catch(err => {
-                    console.error('Error inserting passenger details:', err);
-                    res.status(500).json({ error: 'Failed to create passenger details' });
-                });
+        // Compare password
+        const match = await bcrypt.compare(password, user.password);
+        if (!match) {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid credentials'
+            });
+        }
+
+        // Set user session
+        req.session.user = {
+            user_id: user.user_id,
+            user_name: user.user_name,
+            email_id: user.email_id
+        };
+
+        res.json({
+            success: true,
+            message: 'Login successful',
+            user: {
+                user_id: user.user_id,
+                user_name: user.user_name,
+                email_id: user.email_id
+            }
+        });
+
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'An error occurred during login'
+        });
+    }
+});
+
+// Middleware to check if user is logged in
+const requireLogin = (req, res, next) => {
+    if (!req.session.user) {
+        return res.status(401).json({
+            success: false,
+            message: 'Please login to continue'
+        });
+    }
+    next();
+};
+
+// Book ticket endpoint (protected)
+app.post('/book-ticket', requireLogin, async (req, res) => {
+    const {
+        train_number,
+        source_station,
+        destination_station,
+        travel_date,
+        passengers,
+        ticket_class,
+        ticket_type = 'online',
+        payment_mode = 'online'
+    } = req.body;
+
+    try {
+        // Start a transaction
+        await db.promise().beginTransaction();
+
+        // Generate PNR number (10 digits)
+        const pnr = Math.floor(1000000000 + Math.random() * 9000000000).toString();
+
+        // Generate transaction ID (format: TXN + timestamp + random 4 digits)
+        const timestamp = Date.now();
+        const randomDigits = Math.floor(1000 + Math.random() * 9000);
+        const transaction_id = `TXN${timestamp}${randomDigits}`;
+
+        // Calculate total fare (example calculation - you should adjust based on your fare rules)
+        const baseFare = 500; // Base fare per passenger
+        const totalFare = baseFare * passengers.length;
+
+        // Format the travel date to ensure it's in YYYY-MM-DD format
+        const formatDateForMySQL = (dateStr) => {
+            try {
+                if (typeof dateStr !== 'string') {
+                    dateStr = String(dateStr);
+                }
+                if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+                    return dateStr;
+                }
+                if (dateStr.includes('/')) {
+                    const [day, month, year] = dateStr.split('/');
+                    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                }
+                if (dateStr instanceof Date) {
+                    return dateStr.toISOString().split('T')[0];
+                }
+                const date = new Date(dateStr);
+                if (!isNaN(date.getTime())) {
+                    return date.toISOString().split('T')[0];
+                }
+                throw new Error('Invalid date format');
+            } catch (error) {
+                console.error('Date formatting error:', error);
+                return new Date().toISOString().split('T')[0];
+            }
+        };
+        const formattedTravelDate = formatDateForMySQL(travel_date);
+
+        // Insert ticket record with all required fields
+        const [ticketResult] = await db.promise().query(
+            `INSERT INTO ticket (
+                pnr_number, train_number, user_id, date_of_book, 
+                boarding_station, destination_station, date_of_travel,
+                no_of_passenger, ticket_class, total_fare, transaction_id,
+                ticket_type, payment_mode, status
+            ) VALUES (?, ?, ?, CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?, ?, 'CONFIRMED')`,
+            [
+                pnr,
+                train_number,
+                req.session.user.user_id,
+                source_station,
+                destination_station,
+                formattedTravelDate,
+                passengers.length,
+                ticket_class,
+                totalFare,
+                transaction_id,
+                ticket_type,
+                payment_mode
+            ]
+        );
+
+        // Insert passenger records
+        for (const passenger of passengers) {
+            await db.promise().query(
+                `INSERT INTO passenger (
+                    pnr_number, passenger_name, age, gender, seat_number, coach
+                ) VALUES (?, ?, ?, ?, ?, ?)`,
+                [
+                    pnr,
+                    passenger.name,
+                    passenger.age,
+                    passenger.gender,
+                    passenger.seat_number || null,
+                    passenger.coach || null
+                ]
+            );
+        }
+
+        // Commit the transaction
+        await db.promise().commit();
+
+        res.json({
+            success: true,
+            message: 'Ticket booked successfully',
+            pnr: pnr,
+            transaction_id: transaction_id,
+            total_fare: totalFare,
+            redirect_url: `/show-ticket.html?pnr=${pnr}`
+        });
+
+    } catch (error) {
+        // Rollback the transaction in case of error
+        await db.promise().rollback();
+        console.error('Error booking ticket:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to book ticket. Please try again.'
         });
     }
 });
