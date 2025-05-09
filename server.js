@@ -15,11 +15,11 @@ app.use(express.static('public'));
 
 // Database configuration
 const db = mysql.createConnection({
-    host: "mysql-3692d36b-smartrail.j.aivencloud.com",
+    host: process.env.DB_HOST,
     port: 27353, // default Aiven MySQL SSL port
-    user: "avnadmin",
-    password: "AVNS_BAxgJ-qhLWgZkImZVka",
-    database: "defaultdb",
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
     ssl: {
         ca: fs.readFileSync('./ca (1).pem')  // path to your downloaded Aiven CA certificate
     }
