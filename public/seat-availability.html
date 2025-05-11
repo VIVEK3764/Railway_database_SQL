@@ -6,343 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seat Availability - Indian Railways</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        :root {
-            --primary-color: #0056b3;
-            --secondary-color: #e31837;
-            --accent-color: #ffc107;
-            --text-color: #333;
-            --light-bg: #f8f9fa;
-            --white: #ffffff;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background-color: var(--light-bg);
-            color: var(--text-color);
-            line-height: 1.6;
-        }
-
-        /* Header Styles */
-        .header {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            color: var(--white);
-            padding: 1rem 0;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .header-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .logo img {
-            height: 50px;
-            width: auto;
-        }
-
-        .logo h1 {
-            font-size: 1.8rem;
-            font-weight: 700;
-        }
-
-        .nav-menu {
-            display: flex;
-            gap: 20px;
-        }
-
-        .nav-menu a {
-            color: var(--white);
-            text-decoration: none;
-            padding: 8px 15px;
-            border-radius: 4px;
-            transition: background-color 0.3s;
-        }
-
-        .nav-menu a:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        /* Main Content Styles */
-        .main-container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 20px;
-        }
-
-        .availability-container {
-            background-color: var(--white);
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .availability-container h2 {
-            color: var(--primary-color);
-            margin-bottom: 1.5rem;
-            text-align: center;
-            font-size: 1.8rem;
-            border-bottom: 2px solid var(--accent-color);
-            padding-bottom: 0.5rem;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: var(--text-color);
-        }
-
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 1rem;
-            transition: border-color 0.3s;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.1);
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 1.5rem;
-        }
-
-        button {
-            background-color: var(--secondary-color);
-            color: var(--white);
-            padding: 12px 24px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 600;
-            width: 100%;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-
-        button:hover {
-            background-color: #c1122f;
-            transform: translateY(-2px);
-        }
-
-        /* Availability Results Styles */
-        .availability-results {
-            margin-top: 2rem;
-        }
-
-        .availability-card {
-            background-color: var(--white);
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .availability-card h3 {
-            color: var(--primary-color);
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .class-availability {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-
-        .class-card {
-            background-color: var(--light-bg);
-            padding: 1rem;
-            border-radius: 4px;
-            text-align: center;
-        }
-
-        .class-card h4 {
-            color: var(--text-color);
-            margin-bottom: 0.5rem;
-        }
-
-        .seats-available {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: var(--secondary-color);
-        }
-
-        .status {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin-top: 0.5rem;
-        }
-
-        .status-available {
-            background-color: #d4edda;
-            color: #155724;
-        }
-
-        .status-waiting {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-
-        .status-full {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-
-        /* Loading Animation */
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 2rem;
-        }
-
-        .loading i {
-            font-size: 2rem;
-            color: var(--primary-color);
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* No Results Message */
-        .no-results {
-            text-align: center;
-            padding: 2rem;
-            color: var(--secondary-color);
-            background-color: var(--white);
-            border-radius: 8px;
-            margin-top: 2rem;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Footer Styles */
-        .footer {
-            background-color: var(--primary-color);
-            color: var(--white);
-            padding: 2rem 0;
-            margin-top: 3rem;
-        }
-
-        .footer-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 2rem;
-        }
-
-        .footer-section h3 {
-            margin-bottom: 1rem;
-            font-size: 1.2rem;
-        }
-
-        .footer-section ul {
-            list-style: none;
-        }
-
-        .footer-section ul li {
-            margin-bottom: 0.5rem;
-        }
-
-        .footer-section a {
-            color: var(--white);
-            text-decoration: none;
-            opacity: 0.8;
-            transition: opacity 0.3s;
-        }
-
-        .footer-section a:hover {
-            opacity: 1;
-        }
-
-        .social-links {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-
-        .social-links a {
-            color: var(--white);
-            font-size: 1.5rem;
-        }
-
-        .copyright {
-            text-align: center;
-            padding-top: 2rem;
-            margin-top: 2rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .header-container {
-                flex-direction: column;
-                gap: 1rem;
-            }
-
-            .nav-menu {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-
-            .class-availability {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
@@ -376,54 +40,37 @@
                             required>
                     </div>
                     <div class="form-group">
-                        <label for="source"><i class="fas fa-map-marker-alt"></i> Source Station</label>
-                        <input type="text" id="source" name="source" placeholder="Enter source station" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="destination"><i class="fas fa-map-marker-alt"></i> Destination Station</label>
-                        <input type="text" id="destination" name="destination" placeholder="Enter destination station"
-                            required>
+                        <label for="travelDate"><i class="fas fa-calendar-alt"></i> Travel Date</label>
+                        <input type="date" id="travelDate" name="travelDate" required>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="date"><i class="fas fa-calendar-alt"></i> Date of Journey</label>
-                        <input type="date" id="date" name="date" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="class"><i class="fas fa-couch"></i> Class</label>
-                        <select id="class" name="class" required>
+                        <label for="ticketClass"><i class="fas fa-couch"></i> Class</label>
+                        <select id="ticketClass" name="ticketClass" required>
                             <option value="">Select Class</option>
-                            <option value="1A">First AC (1A)</option>
-                            <option value="2A">Second AC (2A)</option>
-                            <option value="3A">Third AC (3A)</option>
-                            <option value="SL">Sleeper (SL)</option>
-                            <option value="CC">Chair Car (CC)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="quota"><i class="fas fa-users"></i> Quota</label>
-                        <select id="quota" name="quota" required>
-                            <option value="">Select Quota</option>
-                            <option value="GN">General</option>
-                            <option value="TQ">Tatkal</option>
-                            <option value="LD">Ladies</option>
-                            <option value="SS">Senior Citizen</option>
-                            <option value="PH">Divyaang</option>
+                            <option value="first_ac">First AC (1A)</option>
+                            <option value="second_ac">Second AC (2A)</option>
+                            <option value="third_ac">Third AC (3A)</option>
+                            <option value="sleeper">Sleeper (SL)</option>
+                            <option value="general">General (GN)</option>
                         </select>
                     </div>
                 </div>
-                <button type="submit"><i class="fas fa-search"></i> Check Availability</button>
+                <button type="submit" class="btn"><i class="fas fa-search"></i> Check Availability</button>
             </form>
         </div>
 
         <!-- Loading Animation -->
-        <div id="loading" class="loading">
+        <div id="loading" class="loading" style="display: none;">
             <i class="fas fa-spinner"></i>
         </div>
 
-        <!-- Availability Results -->
-        <div id="availabilityResults"></div>
+        <!-- Results Container -->
+        <div id="result" class="result-container" style="display: none;">
+            <h2><i class="fas fa-info-circle"></i> Availability Result</h2>
+            <div id="availabilityResult"></div>
+        </div>
     </main>
 
     <!-- Footer -->
@@ -470,116 +117,50 @@
         document.getElementById('availabilityForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            // Get form values
             const trainNumber = document.getElementById('trainNumber').value;
-            const source = document.getElementById('source').value;
-            const destination = document.getElementById('destination').value;
-            const date = document.getElementById('date').value;
-            const classType = document.getElementById('class').value;
-            const quota = document.getElementById('quota').value;
+            const travelDate = document.getElementById('travelDate').value;
+            const ticketClass = document.getElementById('ticketClass').value;
 
             // Show loading animation
             document.getElementById('loading').style.display = 'block';
-            document.getElementById('availabilityResults').innerHTML = '';
+            document.getElementById('result').style.display = 'none';
 
             try {
-                const response = await fetch('/check-availability', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        trainNumber,
-                        source,
-                        destination,
-                        date,
-                        class: classType,
-                        quota
-                    })
-                });
-
+                const response = await fetch(`/check-availability?train_number=${trainNumber}&travel_date=${travelDate}&class=${ticketClass}`);
                 const data = await response.json();
-                displayAvailability(data);
+
+                const resultDiv = document.getElementById('result');
+                const availabilityResult = document.getElementById('availabilityResult');
+
+                if (data.success) {
+                    availabilityResult.innerHTML = `
+                        <div class="success-message">
+                            <p><i class="fas fa-check-circle"></i> Available Seats: ${data.available_seats}</p>
+                        </div>
+                    `;
+                } else {
+                    availabilityResult.innerHTML = `
+                        <div class="error-message">
+                            <p><i class="fas fa-exclamation-circle"></i> ${data.message}</p>
+                        </div>
+                    `;
+                }
+                resultDiv.style.display = 'block';
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('availabilityResults').innerHTML = `
-                    <div class="no-results">
-                        <i class="fas fa-exclamation-circle"></i>
-                        Error checking seat availability. Please try again.
+                const resultDiv = document.getElementById('result');
+                const availabilityResult = document.getElementById('availabilityResult');
+                availabilityResult.innerHTML = `
+                    <div class="error-message">
+                        <p><i class="fas fa-exclamation-circle"></i> An error occurred while checking availability. Please try again.</p>
                     </div>
                 `;
+                resultDiv.style.display = 'block';
             } finally {
                 // Hide loading animation
                 document.getElementById('loading').style.display = 'none';
             }
         });
-
-        function displayAvailability(data) {
-            const resultsDiv = document.getElementById('availabilityResults');
-
-            if (!data || data.length === 0) {
-                resultsDiv.innerHTML = `
-                    <div class="no-results">
-                        <i class="fas fa-exclamation-circle"></i>
-                        No availability information found for the specified criteria.
-                    </div>
-                `;
-                return;
-            }
-
-            const availabilityCard = `
-                <div class="availability-card">
-                    <h3>
-                        <i class="fas fa-train"></i>
-                        ${data.trainName} (${data.trainNumber})
-                    </h3>
-                    <p>
-                        <i class="fas fa-map-marker-alt"></i>
-                        ${data.source} → ${data.destination}
-                    </p>
-                    <p>
-                        <i class="fas fa-calendar-alt"></i>
-                        ${formatDate(data.date)}
-                    </p>
-                    <div class="class-availability">
-                        ${data.availability.map(classInfo => `
-                            <div class="class-card">
-                                <h4>${getClassName(classInfo.class)}</h4>
-                                <div class="seats-available">${classInfo.available} Seats</div>
-                                <span class="status ${getStatusClass(classInfo.status)}">
-                                    ${classInfo.status}
-                                </span>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-
-            resultsDiv.innerHTML = availabilityCard;
-        }
-
-        function formatDate(dateStr) {
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            return new Date(dateStr).toLocaleDateString('en-IN', options);
-        }
-
-        function getClassName(classCode) {
-            const classNames = {
-                '1A': 'First AC (1A)',
-                '2A': 'Second AC (2A)',
-                '3A': 'Third AC (3A)',
-                'SL': 'Sleeper (SL)',
-                'CC': 'Chair Car (CC)'
-            };
-            return classNames[classCode] || classCode;
-        }
-
-        function getStatusClass(status) {
-            status = status.toLowerCase();
-            if (status.includes('available')) return 'status-available';
-            if (status.includes('waiting')) return 'status-waiting';
-            return 'status-full';
-        }
     </script>
 </body>
 

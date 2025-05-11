@@ -118,134 +118,93 @@ app.post('/insert_user', async (req, res) => {
 });
 
 // Route to get ticket details by PNR
-app.get('/ticket-details', (req, res) => {
+app.get('/ticket-details', async (req, res) => {
     const pnr = req.query.pnr;
 
-    // First get the ticket details
-    const ticketQuery = `
-        SELECT t.*, tr.train_name 
-        FROM ticket t
-        JOIN train tr ON t.train_number = tr.train_number
-        WHERE t.pnr_number = ?
-    `;
+    if (!pnr) {
+        return res.status(400).json({
+            success: false,
+            message: 'PNR number is required'
+        });
+    }
 
-    db.query(ticketQuery, [pnr], (err, ticketResults) => {
-        if (err) {
-            console.error('Error fetching ticket details:', err);
-            return res.status(500).json({ success: false, message: 'Error fetching ticket details' });
+    try {
+        // Get ticket details with train information
+        const [ticketRows] = await db.promise().query(
+            `SELECT 
+                t.pnr_number,
+                t.train_number,
+                t.user_id,
+                DATE_FORMAT(t.date_of_book, '%Y-%m-%d') as date_of_book,
+                t.boarding_station,
+                t.destination_station,
+                DATE_FORMAT(t.date_of_travel, '%Y-%m-%d') as date_of_travel,
+                t.no_of_passenger,
+                t.ticket_class,
+                t.total_fare,
+                t.transaction_id,
+                t.ticket_type,
+                t.payment_mode,
+                t.status,
+                tr.train_name
+            FROM ticket t 
+            JOIN train tr ON t.train_number = tr.train_number 
+            WHERE t.pnr_number = ?`,
+            [pnr]
+        );
+
+        if (ticketRows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Ticket not found'
+            });
         }
 
-        if (ticketResults.length === 0) {
-            return res.status(404).json({ success: false, message: 'Ticket not found' });
-        }
+        const ticket = ticketRows[0];
 
-        const ticket = ticketResults[0];
-
-        // Then get the passenger details
-        const passengerQuery = `
-            SELECT passenger_id, passenger_name as name, pnr_number, age, gender, 
-                   seat_number, coach
+        // Get passenger details
+        const [passengerRows] = await db.promise().query(
+            `SELECT 
+                passenger_name as name,
+                age,
+                gender,
+                seat_number,
+                coach
             FROM passenger 
             WHERE pnr_number = ?
-            ORDER BY passenger_id
-        `;
+            ORDER BY passenger_id`,
+            [pnr]
+        );
 
-        db.query(passengerQuery, [pnr], (err, passengerResults) => {
-            if (err) {
-                console.error('Error fetching passenger details:', err);
-                return res.status(500).json({ success: false, message: 'Error fetching passenger details' });
-            }
-
-            res.json({
-                success: true,
-                ticket,
-                passengers: passengerResults
-            });
+        res.json({
+            success: true,
+            ticket: {
+                pnr_number: ticket.pnr_number,
+                train_number: ticket.train_number,
+                train_name: ticket.train_name,
+                date_of_book: ticket.date_of_book,
+                boarding_station: ticket.boarding_station,
+                destination_station: ticket.destination_station,
+                date_of_travel: ticket.date_of_travel,
+                no_of_passenger: ticket.no_of_passenger,
+                ticket_class: ticket.ticket_class,
+                total_fare: ticket.total_fare,
+                transaction_id: ticket.transaction_id,
+                ticket_type: ticket.ticket_type,
+                payment_mode: ticket.payment_mode,
+                status: ticket.status
+            },
+            passengers: passengerRows
         });
-    });
+
+    } catch (error) {
+        console.error('Database error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching ticket details'
+        });
+    }
 });
-// app.get('/ticket-details', async (req, res) => {
-//     const pnr = req.query.pnr;
-
-//     if (!pnr) {
-//         return res.json({ success: false, message: 'PNR number is required' });
-//     }
-
-//     try {
-//         // Get ticket details with train information
-//         const [ticketRows] = await db.promise().query(
-//             `SELECT 
-//                 t.pnr_number,
-//                 t.train_number,
-//                 t.user_id,
-//                 DATE_FORMAT(t.date_of_book, '%Y-%m-%d') as booking_date,
-//                 t.boarding_station,
-//                 t.destination_station,
-//                 DATE_FORMAT(t.date_of_travel, '%Y-%m-%d') as journey_date,
-//                 t.no_of_passenger,
-//                 t.ticket_class,
-//                 t.total_fare,
-//                 t.transaction_id,
-//                 t.ticket_type,
-//                 t.payment_mode,
-//                 t.status,
-//                 tr.train_name
-//             FROM ticket t 
-//             JOIN train tr ON t.train_number = tr.train_number 
-//             WHERE t.pnr_number = ?`,
-//             [pnr]
-//         );
-
-//         if (ticketRows.length === 0) {
-//             return res.json({ success: false, message: 'Ticket not found' });
-//         }
-
-//         const ticket = ticketRows[0];
-
-//         // Get passenger details
-//         const [passengerRows] = await db.promise().query(
-//             'SELECT passenger_name, age, gender, seat_number, coach FROM passenger WHERE pnr_number = ?',
-//             [pnr]
-//         );
-
-//         // Calculate fare details
-//         const baseFarePerPassenger = parseFloat(ticket.total_fare) / ticket.no_of_passenger;
-
-//         res.json({
-//             success: true,
-//             booking_id: ticket.pnr_number,
-//             journey_details: {
-//                 train_number: `'${ticket.train_number}'`,
-//                 train_name: ticket.train_name,
-//                 date_of_journey: ticket.journey_date,
-//                 from_station: ticket.boarding_station,
-//                 to_station: ticket.destination_station,
-//                 class: ticket.ticket_class,
-//                 booking_date: ticket.booking_date,
-//                 status: ticket.status,
-//                 ticket_type: ticket.ticket_type,
-//                 payment_mode: ticket.payment_mode,
-//                 transaction_id: ticket.transaction_id
-//             },
-//             passenger_details: passengerRows.map(passenger => ({
-//                 name: passenger.passenger_name || 'undefined',
-//                 age: passenger.age || '',
-//                 gender: passenger.gender || 'Other',
-//                 coach: passenger.coach || '',
-//                 seat_no: passenger.seat_number || ''
-//             })),
-//             fare_details: {
-//                 base_fare_per_passenger: baseFarePerPassenger.toFixed(2),
-//                 number_of_passengers: ticket.no_of_passenger,
-//                 total_fare: parseFloat(ticket.total_fare).toFixed(2)
-//             }
-//         });
-
-//     } catch (error) {
-//         console.error('Database error:', error);
-//         res.json({ success: false, message: 'Error fetching ticket details' });
-//     }
-// });
 
 // Route to cancel ticket
 app.post('/cancel-ticket', async (req, res) => {
@@ -534,33 +493,80 @@ app.get('/train-schedule', (req, res) => {
 
 // Check Seat Availability endpoint
 app.get('/check-availability', (req, res) => {
-    const trainNumber = req.query.train_number;
-    const travelDate = req.query.travel_date;
-    const ticketClass = req.query.class;
+    const formatDateForMySQL = (dateStr) => {
+        try {
+            if (!dateStr) {
+                throw new Error('Date is required');
+            }
+            // If it's already in YYYY-MM-DD format, return as is
+            if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+                return dateStr;
+            }
+            // Convert to YYYY-MM-DD format
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) {
+                throw new Error('Invalid date format');
+            }
+            return date.toISOString().split('T')[0];
+        } catch (error) {
+            console.error('Date formatting error:', error);
+            throw error;
+        }
+    };
 
-    if (!trainNumber || !travelDate || !ticketClass) {
-        return res.status(400).json({ success: false, message: 'All parameters are required' });
-    }
+    try {
+        const trainNumber = req.query.train_number;
+        const travelDate = formatDateForMySQL(req.query.travel_date);
+        const ticketClass = req.query.class;
 
-    // Add quotes around the train number as required by the procedure
-    const formattedTrainNumber = `'${trainNumber}'`;
-    const query = 'CALL check_seat_availability(?, ?, ?)';
-
-    db.query(query, [formattedTrainNumber, travelDate, ticketClass], (err, results) => {
-        if (err) {
-            console.error('Error checking seat availability:', err);
-            return res.status(500).json({ success: false, message: 'Error checking seat availability' });
+        if (!trainNumber || !travelDate || !ticketClass) {
+            return res.status(400).json({
+                success: false,
+                message: 'Train number, travel date, and class are required'
+            });
         }
 
-        if (!results || !results[0] || results[0].length === 0) {
-            return res.status(404).json({ success: false, message: 'No availability information found' });
-        }
+        // Add quotes around the train number as required by the procedure
+        const formattedTrainNumber = `'${trainNumber}'`;
+        const query = 'CALL check_seat_availability(?, ?, ?)';
 
-        res.json({
-            success: true,
-            available_seats: results[0][0].available_seats
+        db.query(query, [formattedTrainNumber, travelDate, ticketClass], (err, results) => {
+            if (err) {
+                console.error('Error checking seat availability:', err);
+                return res.status(500).json({
+                    success: false,
+                    message: 'Error checking seat availability'
+                });
+            }
+
+            if (!results || !results[0] || results[0].length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'No availability information found for the specified train and date'
+                });
+            }
+
+            const availableSeats = results[0][0].available_seats;
+
+            if (availableSeats === null) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'No inventory record found for this train and date'
+                });
+            }
+
+            res.json({
+                success: true,
+                available_seats: availableSeats
+            });
         });
-    });
+    } catch (error) {
+        console.error('Error in check-availability:', error);
+        res.status(400).json({
+            success: false,
+            message: error.message || 'Error processing request'
+        });
+    }
 });
 
 // Passenger List endpoint
@@ -591,6 +597,14 @@ app.get('/passenger-list', (req, res) => {
             success: true,
             passengers: results[0]
         });
+    });
+});
+
+// Check login status endpoint
+app.get('/check-login', (req, res) => {
+    res.json({
+        isLoggedIn: !!req.session.user,
+        user: req.session.user || null
     });
 });
 
